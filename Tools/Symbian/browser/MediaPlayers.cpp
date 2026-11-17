@@ -315,7 +315,8 @@ private:
 
 MediaPlayer* CreateMediaPlayer(void* aWindow, MediaPlayerClient& aClient, bool aHasVideo)
 {
+    // Without a window (the engine process) there is nowhere to show video.
     if (aHasVideo)
-        return new CVideoPlayer(aClient, *static_cast<RWindowBase*>(aWindow));
+        return aWindow ? new CVideoPlayer(aClient, *static_cast<RWindowBase*>(aWindow)) : nullptr;
     return new CAudioPlayer(aClient);
 }

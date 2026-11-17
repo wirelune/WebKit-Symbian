@@ -8,7 +8,9 @@
 #   jsc.sis                 jsc.exe and the test scripts in C:\Data
 #   browser.sis             browser.exe with its menu registration,
 #                           C:\Data\WebKit\test.html and the trusted roots
-#                           for HTTPS, C:\resource\webkit\cacert.pem
+#                           for HTTPS, C:\resource\webkit\cacert.pem, and
+#                           wkengine.exe, the engine of the Qt browser
+#                           (qtbrowser/, which qmake packages)
 #
 # Packages are unsigned. SIS_CERTIFICATE and SIS_KEY name a PEM certificate
 # and RSA key to sign them with instead; updating an installed package then
@@ -21,6 +23,7 @@ vendor=symbian-webkit
 icu=$ICU_DIR/install/share/icu/icudt63l.dat
 jsc=$E32_BUILD/e32/jsc.exe
 browser=$BROWSER_BUILD/e32
+engine=$ENGINE_BUILD/e32/wkengine.exe
 # Mozilla's trusted roots, as curl's maintainers extract them.
 cacert=$WORK/downloads/cacert-2026-09-25.pem
 cacert_sha256=a41b5d356aea97a529fe27e0f7316d2f9d946d75927476cf9cf1b90637d00505
@@ -51,8 +54,13 @@ if [ -f "$browser/browser.exe" ]; then
     echo "$cacert_sha256  $cacert.tmp" | sha256sum -c --quiet
     mv "$cacert.tmp" "$cacert"
   fi
+  engine_file=()
+  if [ -f "$engine" ]; then
+    engine_file=(--file "$engine=!:\\sys\\bin\\wkengine.exe")
+  fi
   make_sis --uid 0xE1A5C012 --name "WebKit Browser" --output "$out/browser.sis" \
     --file "$browser/browser.exe=!:\\sys\\bin\\browser.exe" \
+    "${engine_file[@]}" \
     --file "$browser/browser_reg.rsc=!:\\private\\10003a3f\\import\\apps\\browser_reg.rsc" \
     --file "$browser/browser_loc.rsc=!:\\resource\\apps\\browser_loc.rsc" \
     --file "$REPO/browser/test.html=c:\\data\\webkit\\test.html" \

@@ -1,0 +1,13 @@
+# What qmake and the Symbian build generate here.
+.make.cache
+Makefile*
+*.loc
+*.rss
+*.mmp
+*.pkg
+*.sis
+*.sisx
+bld.inf
+moc_*.cpp
+qrc_*.cpp
+*.pro.user*

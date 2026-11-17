@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Runs every step: the E32 converter, ICU, JavaScriptCore and jsc.exe, the
-# WebCore libraries and WebCore, browser.exe and the SIS packages. Output goes
+# WebCore libraries and WebCore, browser.exe, wkengine.exe (the Qt
+# browser's engine) and the SIS packages. Output goes
 # to WebKitBuild/Symbian (SYMBIAN_WEBKIT_WORK).
 # Needs SYMBIAN_SDK_PREFIX (an installed symbian-platform 0.3.0 SDK; default
 # WebKitBuild/Symbian/symbian-sdk), plus host clang, lld, cmake, ninja, ruby,
@@ -21,5 +22,6 @@ if [ "${1:-}" != jsc ]; then
   fi
   step "WebCore (PORT=Symbian)";                "$REPO/scripts/build-webcore.sh"
   step "browser.exe (E32)";                     "$REPO/scripts/build-browser.sh"
+  step "wkengine.exe (E32)";                    "$REPO/scripts/build-engine.sh"
 fi
 step "SIS packages";                            "$REPO/scripts/package-sis.sh"
