@@ -26,7 +26,15 @@ set(engine_sources
   "${B}/PageList.cpp"
   "${B}/RunLoopDriver.cpp")
 
-symbian_add_executable(wkengine SOURCES ${engine_sources})
+# The SDK takes only files of this project here; the browser's sources join
+# the target afterwards.
+symbian_add_executable(wkengine SOURCES EngineServer.cpp)
+target_sources(wkengine PRIVATE
+  "${B}/BrowserLog.cpp"
+  "${B}/MediaPlayers.cpp"
+  "${B}/NetworkConnection.cpp"
+  "${B}/PageList.cpp"
+  "${B}/RunLoopDriver.cpp")
 
 target_include_directories(wkengine PRIVATE "${B}" "${WEBKIT_SOURCE_DIR}/Source/WebKitLegacy/symbian")
 target_compile_features(wkengine PRIVATE cxx_std_17)
