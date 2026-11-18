@@ -17,6 +17,8 @@ build=$ENGINE_BUILD
   tail -n 60 "$WORK/engine-build.log"
   exit 1
 }
+# DLL names with versions, which Symbian^3 Anna's loader needs.
+python3 "$REPO/scripts/e32-imports.py" "$build/e32/wkengine.exe"
 # The browser's heap: WebKit needs far more than the default 1 MB.
 python3 "$REPO/scripts/e32-header.py" "$build/e32/wkengine.exe" \
   "${ENGINE_HEAP_MIN:-0x100000}" "${ENGINE_HEAP_MAX:-0x8000000}" "${ENGINE_STACK:-0x100000}"

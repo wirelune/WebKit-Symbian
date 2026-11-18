@@ -43,8 +43,7 @@ public:
     }
 };
 
-// For the log: the firmware, and whether the system can load each of the
-// port's executables. They are created and killed, never run.
+// For the log: the firmware.
 void logEnvironment()
 {
     TBuf<KSysUtilVersionTextLength> version;
@@ -54,22 +53,6 @@ void logEnvironment()
                 version[i] = ' ';
         }
         qDebug("firmware: %s", qPrintable(toQString(version)));
-    }
-    _LIT(KJsc, "jsc.exe");
-    _LIT(KBrowser, "browser.exe");
-    const TDesC *const names[] = { &KJsc, &KBrowser, &KWkEngineExe };
-    for (unsigned i = 0; i < sizeof(names) / sizeof(names[0]); ++i) {
-        const TDesC &name = *names[i];
-        RProcess process;
-        TInt error = process.Create(name, KNullDesC);
-        if (error == KErrNone) {
-            TFileName path = process.FileName();
-            qDebug("load test %s: ok, %s", qPrintable(toQString(name)), qPrintable(toQString(path)));
-            process.Kill(KErrNone);
-            process.Close();
-        } else {
-            qDebug("load test %s: %d", qPrintable(toQString(name)), error);
-        }
     }
 }
 
