@@ -3,6 +3,7 @@
 #include "../engine/EngineProtocol.h"
 
 #include <QtGlobal>
+#include <bafl/sysutil.h>
 #include <e32base.h>
 #include <e32std.h>
 
@@ -41,6 +42,36 @@ public:
         SendReceive(function, args, status);
     }
 };
+
+// For the log: the firmware, and whether the system can load each of the
+// port's executables. They are created and killed, never run.
+void logEnvironment()
+{
+    TBuf<KSysUtilVersionTextLength> version;
+    if (SysUtil::GetSWVersion(version) == KErrNone) {
+        for (int i = 0; i < version.Length(); ++i) {
+            if (version[i] < ' ')
+                version[i] = ' ';
+        }
+        qDebug("firmware: %s", qPrintable(toQString(version)));
+    }
+    _LIT(KJsc, "jsc.exe");
+    _LIT(KBrowser, "browser.exe");
+    const TDesC *const names[] = { &KJsc, &KBrowser, &KWkEngineExe };
+    for (unsigned i = 0; i < sizeof(names) / sizeof(names[0]); ++i) {
+        const TDesC &name = *names[i];
+        RProcess process;
+        TInt error = process.Create(name, KNullDesC);
+        if (error == KErrNone) {
+            TFileName path = process.FileName();
+            qDebug("load test %s: ok, %s", qPrintable(toQString(name)), qPrintable(toQString(path)));
+            process.Kill(KErrNone);
+            process.Close();
+        } else {
+            qDebug("load test %s: %d", qPrintable(toQString(name)), error);
+        }
+    }
+}
 
 } // namespace
 
@@ -102,6 +133,7 @@ void EngineClientPrivate::start(const QSize &size, int dimension)
     width = size.width();
     height = size.height();
     maxDimension = dimension;
+    logEnvironment();
     // An engine that runs already (a front end that died left it) serves
     // one client only; it ends once that one is gone.
     TInt error = process.Create(KWkEngineExe, KNullDesC);

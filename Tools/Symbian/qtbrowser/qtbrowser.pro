@@ -16,7 +16,7 @@ OTHER_FILES += qml/main.qml qml/BrowserPage.qml qml/PageListPage.qml
 
 symbian {
     SOURCES += engineclient_symbian.cpp
-    LIBS += -leuser
+    LIBS += -leuser -lsysutil
 
     TARGET.UID3 = 0xE1A5C004
     TARGET.CAPABILITY +=
