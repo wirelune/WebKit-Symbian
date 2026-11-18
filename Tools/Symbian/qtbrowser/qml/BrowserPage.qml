@@ -35,7 +35,7 @@ Page {
         TextField {
             id: urlField
             anchors {
-                left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter
+                left: parent.left; right: goButton.left; verticalCenter: parent.verticalCenter
                 leftMargin: platformStyle.paddingSmall; rightMargin: platformStyle.paddingSmall
             }
             placeholderText: "Адрес или поиск"
@@ -45,9 +45,17 @@ Page {
             onActiveFocusChanged: {
                 if (activeFocus)
                     selectAll()
-                else
-                    text = page.url
             }
+        }
+
+        // The full screen keyboard's Enter may only close it: this opens
+        // what was typed.
+        Button {
+            id: goButton
+            anchors { right: parent.right; verticalCenter: parent.verticalCenter
+                      rightMargin: platformStyle.paddingSmall }
+            text: "Открыть"
+            onClicked: root.go(urlField.text)
         }
 
         ProgressBar {
