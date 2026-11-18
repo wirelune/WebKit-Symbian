@@ -152,7 +152,28 @@ Page {
         }
     }
 
-    InfoBanner { id: banner; function show(message) { text = message; open() } }
+    // A message over the top of the page for a few seconds.
+    Rectangle {
+        id: banner
+        function show(message) {
+            bannerText.text = message
+            visible = true
+            bannerTimer.restart()
+        }
+        anchors { top: header.bottom; left: parent.left; right: parent.right }
+        height: bannerText.height + 2 * platformStyle.paddingLarge
+        color: "#e0303030"
+        visible: false
+        Label {
+            id: bannerText
+            anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter
+                      margins: platformStyle.paddingLarge }
+            wrapMode: Text.WordWrap
+            color: "white"
+        }
+        Timer { id: bannerTimer; interval: 3000; onTriggered: banner.visible = false }
+        MouseArea { anchors.fill: parent; onClicked: banner.visible = false }
+    }
 
     QueryDialog {
         id: alertDialog

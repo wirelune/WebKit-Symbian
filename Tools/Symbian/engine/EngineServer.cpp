@@ -19,6 +19,7 @@
 #include <f32file.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 
 using namespace WebKitSymbian;
 
@@ -789,9 +790,12 @@ void RunServerL()
         setenv("DEBUG_CURL", "1", 1);
         setenv("CURL_LOG_FILE", "C:/Data/WebKitQt/curl.txt", 1);
     }
-    WebView::initializeProcess(KDataDirectory);
+    // The log first, so that a failure while the engine initializes shows.
+    mkdir(KDataDirectory, 0777);
     BrowserLogOpen(KDataDirectory);
     BrowserLog("WebKit engine starting");
+    WebView::initializeProcess(KDataDirectory);
+    BrowserLog("engine initialized");
     if (curlTrace)
         BrowserThreadWatchStart();
 
