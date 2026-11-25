@@ -2,6 +2,7 @@
 
 #include <e32base.h>
 #include <e32debug.h>
+#include <hal.h>
 #include <pthread.h>
 #include <unistd.h>
 #include <stdarg.h>
@@ -52,6 +53,15 @@ static void LogMemory()
         static_cast<unsigned>(SymbianRuntimeMimallocReservedBytes() / 1024),
         static_cast<unsigned>(SymbianRuntimeMimallocChunkBytes() / 1024),
         static_cast<unsigned>(SymbianRuntimeMimallocAddressBudget() / 1024));
+    // Most of the engine's memory is not mimalloc's: the user heap and the
+    // JavaScript heap's blocks. What the phone has left tells whether it
+    // runs out.
+    TInt ramFree = 0;
+    HAL::Get(HALData::EMemoryRAMFree, ramFree);
+    TInt allocated = 0;
+    User::AllocSize(allocated);
+    BrowserLog("memory: %d KB free on the phone, user heap %d KB, %d KB of it allocated",
+        ramFree / 1024, User::Heap().Size() / 1024, allocated / 1024);
 }
 
 static void LogThreads()

@@ -265,8 +265,22 @@ void WebView::initializeProcess(const char* directory)
 
     dataDirectory() = String::fromUTF8(directory);
     FileSystem::makeAllDirectories(dataDirectory());
-    NetworkStorageSessionMap::defaultStorageSession().setCookieDatabase(
-        makeUniqueRef<CookieJarDB>(FileSystem::pathByAppendingComponent(dataDirectory(), "cookies.db")));
+    // Cookies are kept in a database there. One that can't be written loses
+    // every cookie without a word (sites that set one and redirect, as
+    // ozon.ru does, then loop until curl gives up), so the engine tries one
+    // and keeps them in memory instead if it doesn't stick.
+    auto& session = NetworkStorageSessionMap::defaultStorageSession();
+    String cookiePath = FileSystem::pathByAppendingComponent(dataDirectory(), "cookies.db");
+    session.setCookieDatabase(makeUniqueRef<CookieJarDB>(cookiePath));
+    URL probe(URL(), "https://cookies.symbian.invalid/"_s);
+    auto& database = session.cookieDatabase();
+    if (database.setCookie(probe, probe, "probe=1"_s, CookieJarDB::Source::Network)) {
+        database.deleteCookie(probe.string(), "probe"_s);
+        WTFLogAlways("cookies: %s", cookiePath.utf8().data());
+    } else {
+        WTFLogAlways("cookies: %s can't be written, cookies last until the engine exits", cookiePath.utf8().data());
+        session.setCookieDatabase(makeUniqueRef<CookieJarDB>(":memory:"_s));
+    }
 
     MediaPlayerPrivateSymbian::registerMediaEngine(dataDirectory());
 
