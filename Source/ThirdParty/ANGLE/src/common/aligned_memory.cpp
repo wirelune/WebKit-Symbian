@@ -35,6 +35,16 @@ void *AlignedAlloc(size_t size, size_t alignment)
 // http://code.google.com/p/android/issues/detail?id=35391
 #elif defined(ANGLE_PLATFORM_ANDROID)
     ptr = memalign(alignment, size);
+#elif defined(__SYMBIAN32__)
+    // Open C has no posix_memalign(): the block starts with the address
+    // malloc() returned, which AlignedFree() frees.
+    if (void *base = malloc(size + alignment + sizeof(void *)))
+    {
+        uintptr_t aligned =
+            (reinterpret_cast<uintptr_t>(base) + sizeof(void *) + alignment - 1) & ~(alignment - 1);
+        ptr                                   = reinterpret_cast<void *>(aligned);
+        reinterpret_cast<void **>(aligned)[-1] = base;
+    }
 #else
     if (posix_memalign(&ptr, alignment, size))
         ptr = nullptr;
@@ -56,6 +66,9 @@ void AlignedFree(void *ptr)
 {
 #if defined(_MSC_VER)
     _aligned_free(ptr);
+#elif defined(__SYMBIAN32__)
+    if (ptr)
+        free(reinterpret_cast<void **>(ptr)[-1]);
 #else
     free(ptr);
 #endif

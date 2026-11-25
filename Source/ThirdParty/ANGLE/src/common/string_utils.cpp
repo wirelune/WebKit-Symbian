@@ -11,8 +11,11 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include <algorithm>
-#include <fstream>
+#if !defined(__SYMBIAN32__)  // The SDK's libc++ has no file streams.
+#    include <fstream>
+#endif
 #include <sstream>
 
 #include "common/platform.h"
@@ -157,6 +160,23 @@ bool HexStringToUInt(const std::string &input, unsigned int *uintOut)
 
 bool ReadFileToString(const std::string &path, std::string *stringOut)
 {
+#if defined(__SYMBIAN32__)
+    FILE *file = fopen(path.c_str(), "rb");
+    if (!file)
+    {
+        return false;
+    }
+    stringOut->clear();
+    char buffer[4096];
+    size_t count;
+    while ((count = fread(buffer, 1, sizeof(buffer), file)) > 0)
+    {
+        stringOut->append(buffer, count);
+    }
+    bool ok = !ferror(file);
+    fclose(file);
+    return ok;
+#else
     std::ifstream inFile(path.c_str());
     if (inFile.fail())
     {
@@ -169,6 +189,7 @@ bool ReadFileToString(const std::string &path, std::string *stringOut)
 
     stringOut->assign(std::istreambuf_iterator<char>(inFile), std::istreambuf_iterator<char>());
     return !inFile.fail();
+#endif
 }
 
 bool BeginsWith(const std::string &str, const std::string &prefix)
