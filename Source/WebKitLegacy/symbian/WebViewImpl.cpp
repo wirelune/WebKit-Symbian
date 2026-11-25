@@ -598,21 +598,33 @@ void WebViewImpl::setFocused(bool focused)
 
 static const int tapSlop = 8;
 // A finger held this long before it moves drags instead of scrolling.
-static const Seconds holdToDrag = 500_ms;
+// Milliseconds. The engine can be busy (scripts, painting) for longer than
+// that, so the time comes from where the finger is read, not from when the
+// event is handled.
+static const unsigned holdToDrag = 500;
 
-void WebViewImpl::handlePointer(PointerEvent event, int x, int y)
+static unsigned pointerTime(unsigned time)
+{
+    if (time)
+        return time;
+    return static_cast<unsigned>(MonotonicTime::now().secondsSinceEpoch().milliseconds());
+}
+
+void WebViewImpl::handlePointer(PointerEvent event, int x, int y, unsigned time)
 {
     IntPoint point(x, y);
     switch (event) {
     case PointerEvent::Down:
         m_pointerDown = true;
         m_gesture = Gesture::Undecided;
-        m_pointerDownTime = MonotonicTime::now();
+        m_pointerDownTime = pointerTime(time);
         m_pointerStart = m_pointerLast = point;
-        if (sendTouch(PlatformEvent::TouchStart, PlatformTouchPoint::TouchPressed, point))
+        if (sendTouch(PlatformEvent::TouchStart, PlatformTouchPoint::TouchPressed, point)) {
             m_gesture = Gesture::Touch;
-        else if (touchActionNone(point)) {
+            WTFLogAlways("touch: the page took it (touchstart)");
+        } else if (touchActionNone(point)) {
             m_gesture = Gesture::Mouse;
+            WTFLogAlways("touch: drags as a mouse (touch-action: none)");
             sendMouse(PlatformEvent::MousePressed, point);
         }
         break;
@@ -623,12 +635,15 @@ void WebViewImpl::handlePointer(PointerEvent event, int x, int y)
             IntSize moved = point - m_pointerStart;
             if (std::abs(moved.width()) <= tapSlop && std::abs(moved.height()) <= tapSlop)
                 break;
-            if (MonotonicTime::now() - m_pointerDownTime >= holdToDrag) {
+            unsigned held = pointerTime(time) - m_pointerDownTime;
+            if (held >= holdToDrag) {
                 sendTouch(PlatformEvent::TouchCancel, PlatformTouchPoint::TouchCancelled, point);
                 m_gesture = Gesture::Mouse;
+                WTFLogAlways("touch: drags as a mouse (held %u ms)", held);
                 sendMouse(PlatformEvent::MousePressed, m_pointerStart);
             } else if (sendTouch(PlatformEvent::TouchMove, PlatformTouchPoint::TouchMoved, point)) {
                 m_gesture = Gesture::Touch;
+                WTFLogAlways("touch: the page took it (touchmove)");
                 m_pointerLast = point;
                 break;
             } else {

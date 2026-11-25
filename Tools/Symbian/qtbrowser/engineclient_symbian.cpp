@@ -322,7 +322,8 @@ void EngineClient::setFocused(bool focused)
 
 void EngineClient::pointer(PointerType type, const QPoint &position)
 {
-    d->call(EWkPointer, TIpcArgs(type, position.x(), position.y()));
+    // When the finger did it: the engine can be busy for a while.
+    d->call(EWkPointer, TIpcArgs(type, position.x(), position.y(), TInt(User::NTickCount())));
 }
 
 void EngineClient::scrollBy(int dx, int dy)

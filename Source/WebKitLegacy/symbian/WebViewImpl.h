@@ -87,7 +87,7 @@ private:
     bool canGoBack() const final;
     bool canGoForward() const final;
     void setFocused(bool) final;
-    void handlePointer(PointerEvent, int x, int y) final;
+    void handlePointer(PointerEvent, int x, int y, unsigned time) final;
     void scrollBy(int dx, int dy) final;
     bool handleKey(bool isDown, int windowsKeyCode, Text, unsigned modifiers) final;
     InputType focusedInputType() const final;
@@ -134,7 +134,7 @@ private:
     enum class Gesture { Undecided, Scroll, Touch, Mouse };
     bool m_pointerDown { false };
     Gesture m_gesture { Gesture::Undecided };
-    MonotonicTime m_pointerDownTime;
+    unsigned m_pointerDownTime { 0 };
     WebCore::IntPoint m_pointerStart;
     WebCore::IntPoint m_pointerLast;
     // A second tap close to the first zooms.

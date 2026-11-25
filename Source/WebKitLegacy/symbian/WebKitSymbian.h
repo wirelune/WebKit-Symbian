@@ -164,8 +164,10 @@ public:
     virtual bool canGoForward() const = 0;
 
     virtual void setFocused(bool) = 0;
-    // Taps become clicks; drags scroll.
-    virtual void handlePointer(PointerEvent, int x, int y) = 0;
+    // The page gets touch events; taps become clicks, and drags scroll unless
+    // the page takes them. time is when the finger did it, in milliseconds
+    // of User::NTickCount(); 0 is now.
+    virtual void handlePointer(PointerEvent, int x, int y, unsigned time) = 0;
     virtual void scrollBy(int dx, int dy) = 0;
     // windowsKeyCode is a Windows virtual key code (VK_*), text the characters
     // the key produces. Returns whether the page handled the key.

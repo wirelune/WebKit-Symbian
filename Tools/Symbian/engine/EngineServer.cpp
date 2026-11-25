@@ -104,7 +104,7 @@ private:
     // A call that acts on the page, run after its message is completed.
     struct TOperation {
         TInt iFunction;
-        TInt iArgs[3];
+        TInt iArgs[4];
         HBufC* iText;
     };
 
@@ -342,6 +342,7 @@ void CEngineSession::QueueL(const RMessage2& aMessage)
     operation.iArgs[0] = aMessage.Int0();
     operation.iArgs[1] = aMessage.Int1();
     operation.iArgs[2] = aMessage.Int2();
+    operation.iArgs[3] = aMessage.Int3();
     operation.iText = nullptr;
     TInt textIndex = -1;
     switch (operation.iFunction) {
@@ -430,7 +431,7 @@ void CEngineSession::Run(const TOperation& aOperation)
     case EWkPointer: {
         PointerEvent type = args[0] == EWkPointerDown ? PointerEvent::Down
             : args[0] == EWkPointerMove ? PointerEvent::Move : PointerEvent::Up;
-        iWebView->handlePointer(type, args[1], args[2]);
+        iWebView->handlePointer(type, args[1], args[2], static_cast<unsigned>(args[3]));
         return;
     }
     case EWkScrollBy:

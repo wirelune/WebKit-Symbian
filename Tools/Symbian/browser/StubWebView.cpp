@@ -56,7 +56,7 @@ public:
 
     void setFocused(bool focused) final { RDebug::Printf("stub: focused %d", focused); }
 
-    void handlePointer(PointerEvent event, int x, int y) final
+    void handlePointer(PointerEvent event, int x, int y, unsigned) final
     {
         if (event != PointerEvent::Up)
             return;

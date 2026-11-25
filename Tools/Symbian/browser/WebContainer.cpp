@@ -174,13 +174,13 @@ void CWebContainer::HandlePointerEventL(const TPointerEvent& aPointerEvent)
     case TPointerEvent::EButton1Down:
         iObserver.WebPointerDownL();
         iPointerDown = point;
-        iWebView->handlePointer(PointerEvent::Down, point.iX, point.iY);
+        iWebView->handlePointer(PointerEvent::Down, point.iX, point.iY, User::NTickCount());
         break;
     case TPointerEvent::EDrag:
-        iWebView->handlePointer(PointerEvent::Move, point.iX, point.iY);
+        iWebView->handlePointer(PointerEvent::Move, point.iX, point.iY, User::NTickCount());
         break;
     case TPointerEvent::EButton1Up: {
-        iWebView->handlePointer(PointerEvent::Up, point.iX, point.iY);
+        iWebView->handlePointer(PointerEvent::Up, point.iX, point.iY, User::NTickCount());
         TPoint moved = point - iPointerDown;
         TBool tap = Abs(moved.iX) <= KTapSlop && Abs(moved.iY) <= KTapSlop;
         // Tapping a field opens the touch keyboard, as it does for an edwin.
