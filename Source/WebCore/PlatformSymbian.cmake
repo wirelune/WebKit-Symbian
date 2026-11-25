@@ -50,3 +50,33 @@ list(APPEND WebCore_LIBRARIES
     ${MBEDX509_LIBRARY}
     ${MBEDCRYPTO_LIBRARY}
 )
+
+# Speed where pages spend their time: style, layout, the DOM and its
+# JavaScript bindings are built for speed (SYMBIAN_SPEED_FLAGS, set in
+# OptionsSymbian.cmake), the rest of WebCore for size. Unified bundles hold
+# the files of one top-level directory, so a bundle's first include names its
+# directory. The bundles are written while WebCore is configured; this runs
+# once that is done.
+function(SYMBIAN_BUILD_WEBCORE_HOT_PATHS_FOR_SPEED)
+    get_target_property(_sources WebCore SOURCES)
+    set(_hot "css|style|rendering|layout|dom|bindings/js")
+    set(_fast "")
+    foreach (_source IN LISTS _sources)
+        if (_source MATCHES "UnifiedSource-[0-9a-f]+-[0-9]+\.cpp$")
+            if (EXISTS "${_source}")
+                file(STRINGS "${_source}" _first LIMIT_COUNT 1)
+                if (_first MATCHES "^#include \"(${_hot})/")
+                    list(APPEND _fast "${_source}")
+                endif ()
+            endif ()
+        elseif (_source MATCHES "(^|/)(${_hot})/[^/]+\.cpp$")
+            list(APPEND _fast "${_source}")
+        endif ()
+    endforeach ()
+    list(LENGTH _fast _count)
+    message(STATUS "Symbian: ${_count} WebCore sources built with ${SYMBIAN_SPEED_FLAGS}")
+    if (_fast)
+        set_source_files_properties(${_fast} PROPERTIES COMPILE_OPTIONS "${SYMBIAN_SPEED_FLAGS}")
+    endif ()
+endfunction()
+cmake_language(DEFER CALL SYMBIAN_BUILD_WEBCORE_HOT_PATHS_FOR_SPEED)

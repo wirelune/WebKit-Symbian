@@ -72,6 +72,13 @@ set(ENABLE_WEBKIT_LEGACY ON)
 set(ENABLE_WEBKIT OFF)
 set(ENABLE_WEBINSPECTORUI OFF)
 
+# The build is for size (-Os, scripts/common.sh); JavaScriptCore and WTF,
+# where scripts spend their time, are built for speed, and so are WebCore's
+# style, layout and DOM (PlatformSymbian.cmake there). The flag comes after
+# the build type's, so it wins.
+set(SYMBIAN_SPEED_FLAGS "-O2" CACHE STRING "Flags for the parts of the engine built for speed")
+add_compile_options("$<$<OR:$<STREQUAL:$<TARGET_PROPERTY:NAME>,JavaScriptCore>,$<STREQUAL:$<TARGET_PROPERTY:NAME>,WTF>>:${SYMBIAN_SPEED_FLAGS}>")
+
 set(bmalloc_LIBRARY_TYPE STATIC)
 set(WTF_LIBRARY_TYPE STATIC)
 set(JavaScriptCore_LIBRARY_TYPE STATIC)
