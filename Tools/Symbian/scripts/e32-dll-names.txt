@@ -93,6 +93,8 @@ lbs.dll lbs{000a0000}[101f97b1].dll
 lbt.dll lbt{000a0000}[10283130].dll
 libc.dll libc{00010001}[10207369].dll
 libdl.dll libdl{00010001}[10281f32].dll
+libegl.dll libEGL{000a0000}.dll
+libglesv2.dll libGLESv2{000a0000}.dll
 libglib.dll libglib{00020068}[10281f2c].dll
 libgobject.dll libgobject{00020068}[10281f39].dll
 libgthread.dll libgthread{00020068}[10281f3a].dll

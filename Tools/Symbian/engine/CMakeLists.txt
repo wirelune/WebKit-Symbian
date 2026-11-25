@@ -65,6 +65,7 @@ target_link_libraries(wkengine PRIVATE
   "${L}/libPAL.a"
   "${L}/libJavaScriptCore.a"
   "${L}/libWTF.a"
+  "${L}/libANGLE.a"
   "${D}/libcairo.a" "${D}/libpixman-1.a" "${D}/libharfbuzz-icu.a" "${D}/libharfbuzz.a"
   "${D}/libfontconfig.a" "${D}/libxslt.a" "${D}/libxml2.a" "${D}/libsqlite3.a" "${D}/libpsl.a"
   "${D}/libwebpdemux.a" "${D}/libwebp.a" "${D}/libcurl.a" "${D}/libmbedtls_fs.a"
@@ -76,7 +77,10 @@ target_link_libraries(wkengine PRIVATE
   Symbian::Streams
   "${SYMBIAN_SDK_PREFIX}/proxies/euser/euser.dso"
   "${SYMBIAN_SDK_PREFIX}/proxies/hal/hal.dso"
-  "${SYMBIAN_SDK_PREFIX}/proxies/libdl/libdl.dso")
+  "${SYMBIAN_SDK_PREFIX}/proxies/libdl/libdl.dso"
+  # WebGL (WebCore/platform/symbian/GraphicsContextGLSymbian.cpp).
+  "${SYMBIAN_SDK_PREFIX}/proxies/libegl/libegl.dso"
+  "${SYMBIAN_SDK_PREFIX}/proxies/libglesv2/libglesv2.dso")
 # As for the browser: thunks for calls beyond a BL's reach.
 target_link_options(wkengine PRIVATE -znocopyreloc -znotext --icf=all --pic-veneer)
 

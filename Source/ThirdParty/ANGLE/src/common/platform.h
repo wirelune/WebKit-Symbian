@@ -30,6 +30,9 @@
     defined(__DragonFly__) || defined(__sun) || defined(__GLIBC__) || defined(__GNU__) || \
     defined(__QNX__) || defined(__Fuchsia__) || defined(__HAIKU__)
 #    define ANGLE_PLATFORM_POSIX 1
+#elif defined(__SYMBIAN32__)
+// Symbian^3 with the Open C POSIX layer (only the shader translator is built).
+#    define ANGLE_PLATFORM_POSIX 1
 #else
 #    error Unsupported platform.
 #endif

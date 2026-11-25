@@ -14,7 +14,7 @@ rm -f "$out/linktest.elf"
 echo 'int main() { return 0; }' > "$out/main.cpp"
 "$REPO/toolchain/sym-c++" -mfloat-abi=softfp -mfpu=vfpv2 "$out/main.cpp" -o "$out/linktest.elf" \
   -Wl,--whole-archive "$L/libWebCore.a" -Wl,--no-whole-archive \
-  "$L/libPAL.a" "$L/libJavaScriptCore.a" "$L/libWTF.a" \
+  "$L/libPAL.a" "$L/libJavaScriptCore.a" "$L/libWTF.a" "$L/libANGLE.a" \
   "$D/libcairo.a" "$D/libpixman-1.a" "$D/libharfbuzz-icu.a" "$D/libharfbuzz.a" \
   "$D/libfontconfig.a" "$D/libxslt.a" "$D/libxml2.a" "$D/libsqlite3.a" "$D/libpsl.a" \
   "$D/libwebpdemux.a" "$D/libwebp.a" "$D/libcurl.a" "$D/libmbedtls_fs.a" \
@@ -22,5 +22,6 @@ echo 'int main() { return 0; }' > "$out/main.cpp"
   "$I/libicui18n.a" "$I/libicuuc.a" "$I/libicudata.a" \
   "$S/libsymbian_portable_freetype.a" "$S/libsymbian_portable_png.a" \
   "$S/libsymbian_portable_jpeg.a" "$S/libsymbian_portable_zlib.a" \
+  "$SDK/proxies/libegl/libegl.dso" "$SDK/proxies/libglesv2/libglesv2.dso" \
   -Wl,--error-limit=0 2>&1 | { grep -oE "undefined symbol: .*" || true; } | sort -u
 [ -f "$out/linktest.elf" ] && command -v llvm-size >/dev/null && llvm-size "$out/linktest.elf"

@@ -66,6 +66,7 @@ if (NOT BROWSER_STUB_ENGINE)
     "${L}/libPAL.a"
     "${L}/libJavaScriptCore.a"
     "${L}/libWTF.a"
+    "${L}/libANGLE.a"
     "${D}/libcairo.a" "${D}/libpixman-1.a" "${D}/libharfbuzz-icu.a" "${D}/libharfbuzz.a"
     "${D}/libfontconfig.a" "${D}/libxslt.a" "${D}/libxml2.a" "${D}/libsqlite3.a" "${D}/libpsl.a"
     "${D}/libwebpdemux.a" "${D}/libwebp.a" "${D}/libcurl.a" "${D}/libmbedtls_fs.a"
@@ -77,7 +78,10 @@ if (NOT BROWSER_STUB_ENGINE)
     Symbian::Streams
     "${SYMBIAN_SDK_PREFIX}/proxies/euser/euser.dso"
     "${SYMBIAN_SDK_PREFIX}/proxies/hal/hal.dso"
-    "${SYMBIAN_SDK_PREFIX}/proxies/libdl/libdl.dso")
+    "${SYMBIAN_SDK_PREFIX}/proxies/libdl/libdl.dso"
+    # WebGL (WebCore/platform/symbian/GraphicsContextGLSymbian.cpp).
+    "${SYMBIAN_SDK_PREFIX}/proxies/libegl/libegl.dso"
+    "${SYMBIAN_SDK_PREFIX}/proxies/libglesv2/libglesv2.dso")
   # Calls beyond an ARM BL's +-32 MB (or a Thumb BL's +-4 MB) go through
   # position-independent LLD thunks, which need no relocation and which the
   # E32 converter follows to the PLT (patches/symbian-native/0002).

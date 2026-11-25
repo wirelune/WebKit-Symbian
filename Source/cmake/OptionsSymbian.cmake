@@ -35,6 +35,9 @@ WEBKIT_OPTION_DEFAULT_PORT_VALUE(ENABLE_WEB_CRYPTO PRIVATE ON)
 # <audio> and <video> on the application's MMF players
 # (WebKitLegacy/symbian/MediaPlayerPrivateSymbian).
 WEBKIT_OPTION_DEFAULT_PORT_VALUE(ENABLE_VIDEO PRIVATE ON)
+# WebGL 1 on the phone's OpenGL ES 2.0 (WebCore/platform/symbian/
+# GraphicsContextGLSymbian.cpp); WebGL 2 would need ES 3.0.
+WEBKIT_OPTION_DEFAULT_PORT_VALUE(ENABLE_WEBGL PRIVATE ON)
 
 # Needs a platform implementation that does not exist yet, or more memory and
 # CPU than an ARM11 phone has.
@@ -59,7 +62,6 @@ WEBKIT_OPTION_DEFAULT_PORT_VALUE(ENABLE_SPEECH_SYNTHESIS PRIVATE OFF)
 WEBKIT_OPTION_DEFAULT_PORT_VALUE(ENABLE_SPELLCHECK PRIVATE OFF)
 WEBKIT_OPTION_DEFAULT_PORT_VALUE(ENABLE_USER_MESSAGE_HANDLERS PRIVATE OFF)
 WEBKIT_OPTION_DEFAULT_PORT_VALUE(ENABLE_WEBDRIVER PRIVATE OFF)
-WEBKIT_OPTION_DEFAULT_PORT_VALUE(ENABLE_WEBGL PRIVATE OFF)
 WEBKIT_OPTION_DEFAULT_PORT_VALUE(ENABLE_WEBGL2 PRIVATE OFF)
 WEBKIT_OPTION_DEFAULT_PORT_VALUE(ENABLE_WEB_AUDIO PRIVATE OFF)
 WEBKIT_OPTION_DEFAULT_PORT_VALUE(ENABLE_WEB_RTC PRIVATE OFF)
@@ -93,6 +95,27 @@ SET_AND_EXPOSE_TO_BUILD(USE_CURL ON)
 SET_AND_EXPOSE_TO_BUILD(USE_FREETYPE ON)
 SET_AND_EXPOSE_TO_BUILD(USE_HARFBUZZ ON)
 SET_AND_EXPOSE_TO_BUILD(USE_MBEDTLS ON)
+
+if (ENABLE_WEBGL)
+    # The system's OpenGL ES 2.0 and EGL (libGLESv2.dll and libEGL.dll, linked
+    # by the engine), with ANGLE only translating shaders to ESSL.
+    SET_AND_EXPOSE_TO_BUILD(USE_OPENGL_ES TRUE)
+    SET_AND_EXPOSE_TO_BUILD(USE_OPENGL FALSE)
+    set(USE_ANGLE_WEBGL OFF)
+    set(USE_ANGLE_EGL OFF)
+    # The standard Khronos headers that come with ANGLE. The SDK's include
+    # Symbian's e32def.h, whose macros clash with WTF's; the functions and
+    # the sizes of the types (int handles there, pointers here) are the same.
+    # On __SYMBIAN32__ the headers mark functions IMPORT_C, which the .dso
+    # import libraries make unnecessary.
+    set(_khronos "${CMAKE_BINARY_DIR}/SymbianGL/include")
+    foreach (_dir EGL GLES2 KHR)
+        file(COPY "${CMAKE_SOURCE_DIR}/Source/ThirdParty/ANGLE/include/${_dir}" DESTINATION "${_khronos}")
+    endforeach ()
+    set(OPENGLES2_INCLUDE_DIRS "${_khronos}")
+    set(OPENGLES2_LIBRARIES "")
+    set(OPENGLES2_DEFINITIONS -DIMPORT_C=)
+endif ()
 
 set(WTF_FRAMEWORK_HEADERS_DIR ${CMAKE_BINARY_DIR}/WTF/Headers)
 set(JavaScriptCore_FRAMEWORK_HEADERS_DIR ${CMAKE_BINARY_DIR}/JavaScriptCore/Headers)

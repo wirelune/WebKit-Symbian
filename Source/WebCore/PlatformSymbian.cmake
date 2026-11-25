@@ -31,6 +31,14 @@ list(REMOVE_ITEM WebCore_LIBRARIES
     OpenSSL::SSL
 )
 
+# WebGL on the phone's OpenGL ES 2.0; the rest of the GLES path is common
+# (CMakeLists.txt, platform/SourcesCairo.txt).
+if (ENABLE_WEBGL)
+    list(APPEND WebCore_SOURCES
+        platform/symbian/GraphicsContextGLSymbian.cpp
+    )
+endif ()
+
 list(APPEND WebCore_USER_AGENT_STYLE_SHEETS
     ${WEBCORE_DIR}/css/themeAdwaita.css
     ${WEBCORE_DIR}/Modules/mediacontrols/mediaControlsAdwaita.css

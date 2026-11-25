@@ -387,6 +387,10 @@ WebViewImpl::WebViewImpl(WebViewClient& client, int width, int height)
     // Nothing composites layers here, so content WebCore moved into one
     // (transforms, will-change, video) would go unpainted.
     settings.setAcceleratedCompositingEnabled(false);
+#if ENABLE(WEBGL)
+    // On the phone's OpenGL ES 2.0; canvases read their drawing back.
+    settings.setWebGLEnabled(true);
+#endif
 
     m_page->mainFrame().init();
     m_page->setIsVisible(true);
