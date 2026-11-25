@@ -109,7 +109,7 @@ if (ENABLE_WEBGL)
     # On __SYMBIAN32__ the headers mark functions IMPORT_C, which the .dso
     # import libraries make unnecessary.
     set(_khronos "${CMAKE_BINARY_DIR}/SymbianGL/include")
-    foreach (_dir EGL GLES2 KHR)
+    foreach (_dir EGL GLES2 GLES3 KHR)
         file(COPY "${CMAKE_SOURCE_DIR}/Source/ThirdParty/ANGLE/include/${_dir}" DESTINATION "${_khronos}")
     endforeach ()
     set(OPENGLES2_INCLUDE_DIRS "${_khronos}")

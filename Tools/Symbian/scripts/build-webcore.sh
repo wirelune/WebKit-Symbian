@@ -31,6 +31,8 @@ cmake -S "$WEBKIT_SRC" -B "$build" -G Ninja -DPORT=Symbian \
 }
 ninja -C "$build" -k 0 -j"$JOBS" > "$WORK/webcore-build.log" || {
   grep -E -A12 "^FAILED: |error:" "$WORK/webcore-build.log" | head -400
+  echo "== Failed:"
+  grep -E "^FAILED: " "$WORK/webcore-build.log" | head -100
   exit 1
 }
 ls -la "$build/lib"

@@ -38,6 +38,7 @@
 
 #if ENABLE(WEBGL) && OS(SYMBIAN) && !USE(ANGLE)
 
+#include "ExtensionsGLOpenGLES.h"
 #include <ANGLE/ShaderLang.h>
 #include <EGL/egl.h>
 #include <GLES2/gl2.h>
@@ -144,8 +145,8 @@ GraphicsContextGLOpenGL::GraphicsContextGLOpenGL(GraphicsContextGLAttributes att
     if (!shared)
         return;
 
-    const EGLint contextAttributes[] = { EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE };
-    EGLContext context = eglCreateContext(shared->display, shared->config, EGL_NO_CONTEXT, contextAttributes);
+    const EGLint clientVersion[] = { EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE };
+    EGLContext context = eglCreateContext(shared->display, shared->config, EGL_NO_CONTEXT, clientVersion);
     if (context == EGL_NO_CONTEXT) {
         WTFLogAlways("webgl: eglCreateContext failed (0x%x)", eglGetError());
         return;
