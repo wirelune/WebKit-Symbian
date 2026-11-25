@@ -78,6 +78,7 @@
 #include <WebCore/RenderStyle.h>
 #include <WebCore/ResourceError.h>
 #include <WebCore/ResourceResponse.h>
+#include <WebCore/RuntimeEnabledFeatures.h>
 #include <WebCore/Settings.h>
 #include <WebCore/SharedBuffer.h>
 #include <WebCore/SimpleRange.h>
@@ -487,6 +488,30 @@ WebViewImpl::WebViewImpl(WebViewClient& client, int width, int height)
     settings.setLoadsImagesAutomatically(true);
     settings.setTextAreasAreResizable(false);
     settings.setDefaultTextEncodingName("UTF-8");
+    // WebCore's own defaults leave these off; the other WebKitLegacy ports
+    // (and Safari) have them on, and pages count on them.
+    settings.setLocalStorageEnabled(true);
+    settings.setVisualViewportAPIEnabled(true);
+    settings.setCSSOMViewScrollingAPIEnabled(true);
+    settings.setDataTransferItemsEnabled(true);
+    settings.setConstantPropertiesEnabled(true);
+    settings.setViewportFitEnabled(true);
+#if ENABLE(INPUT_TYPE_DATE)
+    settings.setInputTypeDateEnabled(true);
+#endif
+#if ENABLE(INPUT_TYPE_DATETIMELOCAL)
+    settings.setInputTypeDateTimeLocalEnabled(true);
+#endif
+#if ENABLE(INPUT_TYPE_MONTH)
+    settings.setInputTypeMonthEnabled(true);
+#endif
+#if ENABLE(INPUT_TYPE_TIME)
+    settings.setInputTypeTimeEnabled(true);
+#endif
+    auto& features = RuntimeEnabledFeatures::sharedFeatures();
+    features.setFetchAPIKeepAliveEnabled(true);
+    features.setWritableStreamAPIEnabled(true);
+    features.setTransformStreamAPIEnabled(true);
     // Nothing composites layers here, so content WebCore moved into one
     // (transforms, will-change, video) would go unpainted.
     settings.setAcceleratedCompositingEnabled(false);

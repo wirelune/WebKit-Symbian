@@ -39,6 +39,7 @@
 #include <wtf/CrossThreadCopier.h>
 #include <wtf/Language.h>
 #include <wtf/MainThread.h>
+#include <wtf/text/StringBuilder.h>
 
 namespace WebCore {
 
@@ -527,8 +528,33 @@ int CurlRequest::didReceiveDebugInfo(curl_infotype type, char* data, size_t size
 
 void CurlRequest::appendAcceptLanguageHeader(HTTPHeaderMap& header)
 {
+#if OS(SYMBIAN)
+    // As other browsers send it: each language and then its base language,
+    // with falling quality values ("ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7").
+    Vector<String> languages;
+    for (const auto& language : userPreferredLanguages()) {
+        if (!languages.contains(language))
+            languages.append(language);
+        size_t dash = language.find('-');
+        if (dash != notFound && !languages.contains(language.left(dash)))
+            languages.append(language.left(dash));
+    }
+    StringBuilder value;
+    for (size_t i = 0; i < languages.size(); ++i) {
+        if (i)
+            value.append(',');
+        value.append(languages[i]);
+        if (i && i < 10)
+            value.append(";q=0.", 10 - i);
+        else if (i)
+            value.append(";q=0.1");
+    }
+    if (!value.isEmpty())
+        header.set(HTTPHeaderName::AcceptLanguage, value.toString());
+#else
     for (const auto& language : userPreferredLanguages())
         header.add(HTTPHeaderName::AcceptLanguage, language);
+#endif
 }
 
 void CurlRequest::setupPUT(ResourceRequest& request)
