@@ -110,6 +110,9 @@ private:
     void zoomAt(const WebCore::IntPoint&);
     void click(const WebCore::IntPoint&);
     void scrollAt(const WebCore::IntPoint&, const WebCore::IntSize& delta);
+    bool sendTouch(int type, int state, const WebCore::IntPoint&);
+    void sendMouse(int type, const WebCore::IntPoint&);
+    bool touchActionNone(const WebCore::IntPoint&);
 
     WebViewClient& m_client;
     std::unique_ptr<WebCore::Page> m_page;
@@ -123,9 +126,15 @@ private:
     float m_minimumScale { 1 };
     float m_maximumScale { 1 };
 
-    // Touch: a press that moves further than the tap slop scrolls.
+    // Touch: the page gets touch events. A press that moves further than the
+    // tap slop scrolls, unless the page takes the gesture (it cancels
+    // touchstart or the first touchmove), the element under the finger has
+    // touch-action: none, or the finger held still first; those last two
+    // drag as a mouse, for pages that listen to mouse or pointer events.
+    enum class Gesture { Undecided, Scroll, Touch, Mouse };
     bool m_pointerDown { false };
-    bool m_pointerScrolling { false };
+    Gesture m_gesture { Gesture::Undecided };
+    MonotonicTime m_pointerDownTime;
     WebCore::IntPoint m_pointerStart;
     WebCore::IntPoint m_pointerLast;
     // A second tap close to the first zooms.

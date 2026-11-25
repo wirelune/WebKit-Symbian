@@ -58,6 +58,7 @@
 #include <WebCore/HTMLInputElement.h>
 #include <WebCore/HTMLNames.h>
 #include <WebCore/HTMLTextAreaElement.h>
+#include <WebCore/HitTestResult.h>
 #include <WebCore/KeyboardEvent.h>
 #include <WebCore/LibWebRTCProvider.h>
 #include <WebCore/MediaRecorderProvider.h>
@@ -68,10 +69,13 @@
 #include <WebCore/PlatformContextCairo.h>
 #include <WebCore/PlatformKeyboardEvent.h>
 #include <WebCore/PlatformMouseEvent.h>
+#include <WebCore/PlatformTouchEvent.h>
 #include <WebCore/PlatformWheelEvent.h>
 #include <WebCore/PluginInfoProvider.h>
 #include <WebCore/ProgressTracker.h>
 #include <WebCore/ProgressTrackerClient.h>
+#include <WebCore/RenderElement.h>
+#include <WebCore/RenderStyle.h>
 #include <WebCore/ResourceError.h>
 #include <WebCore/ResourceResponse.h>
 #include <WebCore/Settings.h>
@@ -109,6 +113,31 @@ String toString(Text text)
         return emptyString();
     return String(reinterpret_cast<const UChar*>(text.characters), text.length);
 }
+
+// One finger: WebCore's touch events are built from these.
+class SymbianTouchPoint final : public PlatformTouchPoint {
+public:
+    SymbianTouchPoint(State state, const IntPoint& point)
+    {
+        m_id = 0;
+        m_state = state;
+        m_pos = point;
+        m_screenPos = point;
+        m_radiusX = 8;
+        m_radiusY = 8;
+        m_force = 1;
+    }
+};
+
+class SymbianTouchEvent final : public PlatformTouchEvent {
+public:
+    SymbianTouchEvent(PlatformEvent::Type type, PlatformTouchPoint::State state, const IntPoint& point)
+    {
+        m_type = type;
+        m_timestamp = WallTime::now();
+        m_touchPoints.append(SymbianTouchPoint(state, point));
+    }
+};
 
 class SymbianProgressTrackerClient final : public ProgressTrackerClient {
 public:
@@ -568,6 +597,8 @@ void WebViewImpl::setFocused(bool focused)
 }
 
 static const int tapSlop = 8;
+// A finger held this long before it moves drags instead of scrolling.
+static const Seconds holdToDrag = 500_ms;
 
 void WebViewImpl::handlePointer(PointerEvent event, int x, int y)
 {
@@ -575,27 +606,114 @@ void WebViewImpl::handlePointer(PointerEvent event, int x, int y)
     switch (event) {
     case PointerEvent::Down:
         m_pointerDown = true;
-        m_pointerScrolling = false;
+        m_gesture = Gesture::Undecided;
+        m_pointerDownTime = MonotonicTime::now();
         m_pointerStart = m_pointerLast = point;
+        if (sendTouch(PlatformEvent::TouchStart, PlatformTouchPoint::TouchPressed, point))
+            m_gesture = Gesture::Touch;
+        else if (touchActionNone(point)) {
+            m_gesture = Gesture::Mouse;
+            sendMouse(PlatformEvent::MousePressed, point);
+        }
         break;
     case PointerEvent::Move:
         if (!m_pointerDown)
             break;
-        if (!m_pointerScrolling) {
+        if (m_gesture == Gesture::Undecided) {
             IntSize moved = point - m_pointerStart;
-            m_pointerScrolling = std::abs(moved.width()) > tapSlop || std::abs(moved.height()) > tapSlop;
+            if (std::abs(moved.width()) <= tapSlop && std::abs(moved.height()) <= tapSlop)
+                break;
+            if (MonotonicTime::now() - m_pointerDownTime >= holdToDrag) {
+                sendTouch(PlatformEvent::TouchCancel, PlatformTouchPoint::TouchCancelled, point);
+                m_gesture = Gesture::Mouse;
+                sendMouse(PlatformEvent::MousePressed, m_pointerStart);
+            } else if (sendTouch(PlatformEvent::TouchMove, PlatformTouchPoint::TouchMoved, point)) {
+                m_gesture = Gesture::Touch;
+                m_pointerLast = point;
+                break;
+            } else {
+                sendTouch(PlatformEvent::TouchCancel, PlatformTouchPoint::TouchCancelled, point);
+                m_gesture = Gesture::Scroll;
+            }
         }
-        if (m_pointerScrolling) {
+        switch (m_gesture) {
+        case Gesture::Touch:
+            sendTouch(PlatformEvent::TouchMove, PlatformTouchPoint::TouchMoved, point);
+            break;
+        case Gesture::Mouse:
+            sendMouse(PlatformEvent::MouseMoved, point);
+            break;
+        case Gesture::Scroll:
             scrollAt(point, point - m_pointerLast);
-            m_pointerLast = point;
+            break;
+        case Gesture::Undecided:
+            break;
         }
+        m_pointerLast = point;
         break;
     case PointerEvent::Up:
-        if (m_pointerDown && !m_pointerScrolling)
-            tap(m_pointerStart);
+        if (!m_pointerDown)
+            break;
         m_pointerDown = false;
+        switch (m_gesture) {
+        case Gesture::Undecided:
+            // A tap; the page can take it by cancelling touchend.
+            if (!sendTouch(PlatformEvent::TouchEnd, PlatformTouchPoint::TouchReleased, m_pointerStart))
+                tap(m_pointerStart);
+            break;
+        case Gesture::Touch:
+            sendTouch(PlatformEvent::TouchEnd, PlatformTouchPoint::TouchReleased, point);
+            break;
+        case Gesture::Mouse:
+            sendMouse(PlatformEvent::MouseReleased, point);
+            sendTouch(PlatformEvent::TouchEnd, PlatformTouchPoint::TouchReleased, point);
+            break;
+        case Gesture::Scroll:
+            break;
+        }
         break;
     }
+}
+
+bool WebViewImpl::sendTouch(int type, int state, const IntPoint& point)
+{
+    SymbianTouchEvent event(static_cast<PlatformEvent::Type>(type), static_cast<PlatformTouchPoint::State>(state), point);
+    return m_page->mainFrame().eventHandler().handleTouchEvent(event);
+}
+
+// A mouse press, drag or release with the left button, for pages that
+// listen to mouse or pointer events (sliders, puzzles).
+void WebViewImpl::sendMouse(int type, const IntPoint& point)
+{
+    auto& handler = m_page->mainFrame().eventHandler();
+    WallTime now = WallTime::now();
+    switch (static_cast<PlatformEvent::Type>(type)) {
+    case PlatformEvent::MousePressed:
+        handler.mouseMoved(PlatformMouseEvent(point, point, NoButton, PlatformEvent::MouseMoved, 0, false, false, false, false, now, 0, NoTap));
+        handler.handleMousePressEvent(PlatformMouseEvent(point, point, LeftButton, PlatformEvent::MousePressed, 1, false, false, false, false, now, ForceAtClick, OneFingerTap));
+        break;
+    case PlatformEvent::MouseMoved:
+        handler.mouseMoved(PlatformMouseEvent(point, point, LeftButton, PlatformEvent::MouseMoved, 0, false, false, false, false, now, ForceAtClick, NoTap));
+        break;
+    default:
+        handler.handleMouseReleaseEvent(PlatformMouseEvent(point, point, LeftButton, PlatformEvent::MouseReleased, 1, false, false, false, false, now, ForceAtClick, OneFingerTap));
+        break;
+    }
+}
+
+// Whether the element under the finger asks for no panning or zooming
+// (CSS touch-action: none), as drag handles do.
+bool WebViewImpl::touchActionNone(const IntPoint& point)
+{
+    FrameView* view = m_page->mainFrame().view();
+    if (!view)
+        return false;
+    HitTestResult result = m_page->mainFrame().eventHandler().hitTestResultAtPoint(view->windowToContents(point),
+        { HitTestRequest::ReadOnly, HitTestRequest::DisallowUserAgentShadowContent, HitTestRequest::AllowChildFrameContent });
+    Element* element = result.targetElement();
+    if (!element || !element->renderer())
+        return false;
+    return element->renderer()->style().effectiveTouchActions().contains(TouchAction::None);
 }
 
 static const Seconds doubleTapInterval = 400_ms;
