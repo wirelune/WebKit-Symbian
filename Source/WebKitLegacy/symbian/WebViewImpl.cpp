@@ -112,6 +112,15 @@ static String& dataDirectory()
 // Fonts: the phone's own (Z:), ones installed on the phone or a memory card
 // (C:, E:, F:) and the browser's own folder. The configuration is built here
 // rather than read from fonts.conf, which the phone has none of.
+// Binds each name strongly to the font the phone has, as fontconfig's stock configuration does on Linux.
+static String fontAliases(const char* font, std::initializer_list<const char*> names)
+{
+    StringBuilder aliases;
+    for (const char* name : names)
+        aliases.append("<alias binding=\"same\"><family>", name, "</family><prefer><family>", font, "</family></prefer></alias>");
+    return aliases.toString();
+}
+
 static void initializeFonts(const String& directory)
 {
     String fontDirectory = FileSystem::pathByAppendingComponent(directory, "fonts");
@@ -122,6 +131,18 @@ static void initializeFonts(const String& directory)
         "<dir>Z:/resource/fonts</dir><dir>C:/resource/fonts</dir>"
         "<dir>E:/resource/fonts</dir><dir>F:/resource/fonts</dir>"
         "<dir>", fontDirectory, "</dir><cachedir>", cacheDirectory, "</cachedir>"
+        // The digit-only clock font must never stand in for text.
+        "<selectfont><rejectfont><pattern><patelt name=\"family\"><string>Series 60 ZDigi</string></patelt></pattern></rejectfont></selectfont>"
+        // Generic families, then the common web names bound strongly, so that WebKit takes the match.
+        "<alias><family>sans-serif</family><prefer><family>Nokia Sans S60</family><family>Arial</family><family>Verdana</family><family>Calibri</family></prefer></alias>"
+        "<alias><family>serif</family><prefer><family>Times New Roman</family><family>Georgia</family></prefer></alias>"
+        "<alias><family>monospace</family><prefer><family>Courier New</family></prefer></alias>"
+        "<alias><family>cursive</family><prefer><family>Georgia</family></prefer></alias>"
+        "<alias><family>fantasy</family><prefer><family>Georgia</family></prefer></alias>",
+        fontAliases("Arial", { "Helvetica", "Helvetica Neue", "Liberation Sans", "Arimo", "Nimbus Sans" }),
+        fontAliases("Nokia Sans S60", { "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Noto Sans", "Open Sans", "Ubuntu", "Tahoma", "DejaVu Sans", "PT Sans", "Fira Sans", "Lato", "Montserrat", "Inter" }),
+        fontAliases("Times New Roman", { "Times", "Liberation Serif", "Tinos", "DejaVu Serif", "Noto Serif", "PT Serif" }),
+        fontAliases("Courier New", { "Courier", "Consolas", "Menlo", "Monaco", "Liberation Mono", "Cousine", "DejaVu Sans Mono", "Roboto Mono", "SF Mono", "Noto Mono" }),
         "</fontconfig>").utf8();
 
     FcConfig* fonts = FcConfigCreate();
