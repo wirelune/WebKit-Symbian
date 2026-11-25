@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Static ARMv6 builds of the libraries WebCore needs beyond the SDK's own
 # (FreeType, libpng, libjpeg, zlib, mbedTLS): pixman, cairo, HarfBuzz,
-# libxml2, libxslt, SQLite, fontconfig, libpsl, libwebp and curl, plus the mbedTLS
+# libxml2, libxslt, SQLite, fontconfig, libpsl, libwebp, nghttp2 and curl, plus the mbedTLS
 # file functions the SDK leaves out (shims/mbedtls-fs.c). Installed into
 # $DEPS_DIR/install.
 #
@@ -253,6 +253,14 @@ build_mbedtls_fs() {
   "$AR" rcs "$P/lib/libmbedtls_fs.a" "$DEPS_DIR/mbedtls-fs/mbedtls-fs.o"
 }
 
+build_nghttp2() {
+  # HTTP/2 for curl (WebKit asks curl for it on https: when curl has it).
+  fetch https://github.com/nghttp2/nghttp2/releases/download/v1.52.0/nghttp2-1.52.0.tar.xz nghttp2-1.52.0
+  cmake_build nghttp2-1.52.0 -DENABLE_LIB_ONLY=ON -DENABLE_STATIC_LIB=ON -DENABLE_SHARED_LIB=OFF \
+    -DENABLE_DOC=OFF -DENABLE_EXAMPLES=OFF -DENABLE_HPACK_TOOLS=OFF -DWITH_LIBXML2=OFF -DWITH_JEMALLOC=OFF
+  [ -f "$P/lib/libnghttp2.a" ]
+}
+
 build_curl() {
   fetch https://curl.se/download/curl-7.88.1.tar.xz curl-7.88.1
   local tls=$sdk_lib/mbedtls
@@ -271,6 +279,13 @@ build_curl() {
   # instead of parsing its own.
   grep -q 'mbedtls_fs_shared_ca_chain' "$vtls" || perl -0pi -e 's{(  mbedtls_x509_crt_init\(&backend->cacert\);\n)}{$1  mbedtls_x509_crt *cachain = &backend->cacert;\n}; s{mbedtls_x509_crt_parse_file\(&backend->cacert, ssl_cafile\)}{mbedtls_fs_shared_ca_chain(ssl_cafile, &cachain)}; s{(mbedtls_ssl_conf_ca_chain\(&backend->config,\n\s*)&backend->cacert,}{$1cachain,}' "$vtls"
   [ "$(grep -c 'cachain' "$vtls")" = 3 ]
+  # TLS 1.3, which the SDK's mbedTLS has (MBEDTLS_SSL_PROTO_TLS1_3) and curl
+  # 7.88 never asks mbedTLS for: the highest version becomes 1.3, and reads go
+  # on past the session tickets a TLS 1.3 server sends after the handshake.
+  grep -q 'MBEDTLS_SSL_MINOR_VERSION_4' "$vtls" || perl -0pi -e 's{(    case CURL_SSLVERSION_TLSv1_3:\n)(      break;\n)}{$1#ifdef MBEDTLS_SSL_PROTO_TLS1_3\n      *mbedver = MBEDTLS_SSL_MINOR_VERSION_4;\n      return CURLE_OK;\n#endif\n$2}g; s{(      ssl_version_max = CURL_SSLVERSION_MAX_TLSv1_)2;\n}{#ifdef MBEDTLS_SSL_PROTO_TLS1_3\n${1}3;\n#else\n${1}2;\n#endif\n}; s{(  ret = mbedtls_ssl_read\(&backend->ssl, \(unsigned char \*\)buf,\n\s*buffersize\);\n)}{  do {\n  $1  }\n#ifdef MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET\n  while(ret == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET);\n#else\n  while(0);\n#endif\n}' "$vtls"
+  [ "$(grep -c 'MBEDTLS_SSL_MINOR_VERSION_4' "$vtls")" = 2 ]
+  grep -q 'CURL_SSLVERSION_MAX_TLSv1_3;' "$vtls"
+  grep -q 'while(ret == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET)' "$vtls"
   # file: URLs name drive letters (file:///C:/Data/page.html), as on Windows.
   sed -i 's/^#if defined(WIN32) || defined(MSDOS) || defined(__EMX__)$/& || defined(__SYMBIAN32__)/' \
     "$src/curl-7.88.1/lib/file.c"
@@ -286,7 +301,9 @@ build_curl() {
   # sets the bundle. Open C's sa_family_t is a byte, while sin_family is a
   # u_short and AF_INET is 0x0800: curl's own addresses for numeric hosts
   # (http://127.0.0.1/) cast the family to sa_family_t, which made it 0.
-  cflags="$cflags $tls_flags -DCURL_SA_FAMILY_T=u_short" cmake_build curl-7.88.1 -DBUILD_CURL_EXE=OFF -DBUILD_TESTING=OFF \
+  # HTTP/2 through nghttp2 (build_nghttp2), negotiated with ALPN.
+  cflags="$cflags $tls_flags -DCURL_SA_FAMILY_T=u_short -DNGHTTP2_STATICLIB" cmake_build curl-7.88.1 -DBUILD_CURL_EXE=OFF -DBUILD_TESTING=OFF \
+    -DUSE_NGHTTP2=ON -DNGHTTP2_INCLUDE_DIR="$P/include" -DNGHTTP2_LIBRARY="$P/lib/libnghttp2.a" \
     -DCURL_DISABLE_DICT=ON -DCURL_DISABLE_FTP=ON -DCURL_DISABLE_GOPHER=ON \
     -DCURL_DISABLE_IMAP=ON -DCURL_DISABLE_LDAPS=ON -DCURL_DISABLE_MQTT=ON \
     -DCURL_DISABLE_POP3=ON -DCURL_DISABLE_RTSP=ON -DCURL_DISABLE_SMB=ON \
@@ -307,7 +324,7 @@ if [ "${1:-}" = --one ]; then
   "build_$2"
   exit
 fi
-all=(pixman sqlite libxml2 libxslt fontconfig cairo harfbuzz libpsl webp mbedtls_fs curl)
+all=(pixman sqlite libxml2 libxslt fontconfig cairo harfbuzz libpsl webp mbedtls_fs nghttp2 curl)
 sdk_pkgconfig
 for name in "${@:-${all[@]}}"; do
   step "$name"
