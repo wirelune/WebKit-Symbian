@@ -245,7 +245,8 @@ bool SymbianFrameLoaderClient::canShowMIMEType(const String& mimeType) const
 
 String SymbianFrameLoaderClient::userAgent(const URL&) const
 {
-    return standardUserAgent();
+    const String& userAgent = userAgentOverride();
+    return userAgent.isEmpty() ? standardUserAgent() : userAgent;
 }
 
 void SymbianFrameLoaderClient::transitionToCommittedForNewPage()

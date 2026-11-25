@@ -91,6 +91,7 @@
 #include <wtf/FileSystem.h>
 #include <wtf/HashSet.h>
 #include <wtf/HexNumber.h>
+#include <wtf/Language.h>
 #include <wtf/MainThread.h>
 #include <wtf/RunLoop.h>
 #include <wtf/text/StringBuilder.h>
@@ -287,6 +288,25 @@ void WebView::initializeProcess(const char* directory)
     // A phone's worth of caches.
     MemoryCache::singleton().setCapacities(0, 4 * MB, 8 * MB);
     BackForwardCache::singleton().setMaxSize(1);
+}
+
+String& userAgentOverride()
+{
+    static NeverDestroyed<String> userAgent;
+    return userAgent;
+}
+
+void WebView::setUserAgent(const char* userAgent)
+{
+    userAgentOverride() = userAgent ? String::fromUTF8(userAgent).stripWhiteSpace() : String();
+}
+
+void WebView::setLanguages(const char* const* languages, int count)
+{
+    Vector<String> list;
+    for (int i = 0; i < count; ++i)
+        list.append(String::fromUTF8(languages[i]));
+    overrideUserPreferredLanguages(list);
 }
 
 void WebView::setWakeUpCallback(void (*wakeUp)(void*), void* context)

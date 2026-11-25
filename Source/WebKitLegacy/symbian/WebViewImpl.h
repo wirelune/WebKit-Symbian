@@ -44,6 +44,9 @@ class ResourceError;
 
 namespace WebKitSymbian {
 
+// WebView::setUserAgent's string; empty for the port's own.
+String& userAgentOverride();
+
 // UTF-16 storage for a Text handed to the application.
 class UTF16Text {
 public:

@@ -130,6 +130,12 @@ public:
     // Once per process, before the first WebView. dataDirectory holds the
     // cookie database and the caches.
     static void initializeProcess(const char* dataDirectory);
+    // The User-Agent string pages get, UTF-8; null or empty for the port's
+    // own. A browser setting, as other browsers have one.
+    static void setUserAgent(const char* userAgent);
+    // The languages pages are asked for (Accept-Language, navigator.language),
+    // most preferred first, as BCP 47 tags; the default is en-US.
+    static void setLanguages(const char* const* languages, int count);
 
     // The engine's timers and tasks run when the application calls
     // runPendingWork(). wakeUp is called, from any thread, whenever there is

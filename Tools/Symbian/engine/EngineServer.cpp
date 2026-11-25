@@ -19,6 +19,7 @@
 #include <f32file.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 
 using namespace WebKitSymbian;
@@ -777,6 +778,56 @@ int CEngineSession::runSelectPopup(const Text* aItems, int aCount, int aSelected
     return index >= 0 && index < aCount ? index : -1;
 }
 
+// Pages are asked for the phone's language first (Accept-Language,
+// navigator.language), then English.
+void SetLanguages()
+{
+    const char* language;
+    switch (User::Language()) {
+    case ELangRussian:
+        language = "ru-RU";
+        break;
+    case ELangUkrainian:
+        language = "uk-UA";
+        break;
+    case ELangBelarussian:
+        language = "be-BY";
+        break;
+    case ELangKazakh:
+        language = "kk-KZ";
+        break;
+    case ELangEnglish:
+        language = "en-GB";
+        break;
+    default:
+        language = nullptr;
+        break;
+    }
+    if (!language)
+        return;
+    const char* languages[] = { language, "en-US" };
+    WebView::setLanguages(languages, 2);
+    BrowserLog("languages: %s, en-US", language);
+}
+
+// The User-Agent string, a browser setting: the first line of
+// C:\Data\WebKitQt\useragent.txt, when the file exists.
+void SetUserAgent()
+{
+    FILE* file = fopen("C:/Data/WebKitQt/useragent.txt", "r");
+    if (!file)
+        return;
+    char line[512];
+    if (fgets(line, sizeof(line), file)) {
+        line[strcspn(line, "\r\n")] = 0;
+        if (line[0]) {
+            WebView::setUserAgent(line);
+            BrowserLog("user agent: %s", line);
+        }
+    }
+    fclose(file);
+}
+
 void RunServerL()
 {
     // curl's own trace goes to C:\Data\WebKitQt\curl.txt while
@@ -796,6 +847,8 @@ void RunServerL()
     BrowserLogOpen(KDataDirectory);
     BrowserLog("WebKit engine starting");
     WebView::initializeProcess(KDataDirectory);
+    SetLanguages();
+    SetUserAgent();
     BrowserLog("engine initialized");
     if (curlTrace)
         BrowserThreadWatchStart();
