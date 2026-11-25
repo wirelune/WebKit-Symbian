@@ -18,6 +18,12 @@ list(APPEND WebKitLegacy_PRIVATE_INCLUDE_DIRECTORIES
     "${WEBKITLEGACY_DIR}/symbian"
 )
 
+# The WebView sets up fontconfig and checks SQLite (symbian/WebViewImpl.cpp).
+list(APPEND WebKitLegacy_LIBRARIES
+    Fontconfig::Fontconfig
+    SQLite::SQLite3
+)
+
 list(APPEND WebKitLegacy_PUBLIC_FRAMEWORK_HEADERS
     symbian/WebKitSymbian.h
 )

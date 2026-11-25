@@ -88,6 +88,9 @@
 #include <WebCore/VisitedLinkStore.h>
 #include <WebCore/WindowsKeyboardCodes.h>
 #include <cairo.h>
+#include <fontconfig/fontconfig.h>
+#include <sqlite3.h>
+#include <stdio.h>
 #include <wtf/FileSystem.h>
 #include <wtf/HashSet.h>
 #include <wtf/HexNumber.h>
@@ -104,6 +107,74 @@ static String& dataDirectory()
 {
     static NeverDestroyed<String> directory;
     return directory;
+}
+
+// Fonts: the phone's own (Z:), ones installed on the phone or a memory card
+// (C:, E:, F:) and the browser's own folder. The configuration is built here
+// rather than read from fonts.conf, which the phone has none of.
+static void initializeFonts(const String& directory)
+{
+    String fontDirectory = FileSystem::pathByAppendingComponent(directory, "fonts");
+    String cacheDirectory = FileSystem::pathByAppendingComponent(directory, "fontconfig");
+    FileSystem::makeAllDirectories(fontDirectory);
+    FileSystem::makeAllDirectories(cacheDirectory);
+    CString xml = makeString("<fontconfig>"
+        "<dir>Z:/resource/fonts</dir><dir>C:/resource/fonts</dir>"
+        "<dir>E:/resource/fonts</dir><dir>F:/resource/fonts</dir>"
+        "<dir>", fontDirectory, "</dir><cachedir>", cacheDirectory, "</cachedir>"
+        "</fontconfig>").utf8();
+
+    FcConfig* fonts = FcConfigCreate();
+    if (!FcConfigParseAndLoadFromMemory(fonts, reinterpret_cast<const FcChar8*>(xml.data()), FcTrue)
+        || !FcConfigBuildFonts(fonts) || !FcConfigSetCurrent(fonts)) {
+        WTFLogAlways("fonts: the font configuration failed, fontconfig looks for its own");
+        FcConfigDestroy(fonts);
+        return;
+    }
+    // FcConfigSetCurrent() holds its own reference.
+    FcConfigDestroy(fonts);
+
+    // Which families there are, for the generic ones (sans-serif...).
+    FcPattern* all = FcPatternCreate();
+    FcObjectSet* properties = FcObjectSetBuild(FC_FAMILY, FC_STYLE, FC_FILE, nullptr);
+    FcFontSet* list = FcFontList(nullptr, all, properties);
+    int count = list ? list->nfont : 0;
+    WTFLogAlways("fonts: %d", count);
+    for (int i = 0; i < count && i < 60; ++i) {
+        FcChar8* family = nullptr;
+        FcChar8* style = nullptr;
+        FcChar8* file = nullptr;
+        FcPatternGetString(list->fonts[i], FC_FAMILY, 0, &family);
+        FcPatternGetString(list->fonts[i], FC_STYLE, 0, &style);
+        FcPatternGetString(list->fonts[i], FC_FILE, 0, &file);
+        WTFLogAlways("  %s, %s: %s", family ? reinterpret_cast<const char*>(family) : "?",
+            style ? reinterpret_cast<const char*>(style) : "?", file ? reinterpret_cast<const char*>(file) : "?");
+    }
+    if (list)
+        FcFontSetDestroy(list);
+    FcObjectSetDestroy(properties);
+    FcPatternDestroy(all);
+}
+
+// Whether SQLite can make and write a database at path with the given VFS
+// (nullptr: the default), with what it says when it can't.
+static bool sqliteCanWrite(const char* path, const char* vfs)
+{
+    ::remove(path);
+    sqlite3* database = nullptr;
+    int result = sqlite3_open_v2(path, &database, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, vfs);
+    char* message = nullptr;
+    if (result == SQLITE_OK)
+        result = sqlite3_exec(database, "CREATE TABLE test(x); INSERT INTO test VALUES(1);", nullptr, nullptr, &message);
+    if (result != SQLITE_OK) {
+        WTFLogAlways("cookies: SQLite with the %s VFS: error %d, %s", vfs ? vfs : "default",
+            database ? sqlite3_extended_errcode(database) : result,
+            message ? message : (database ? sqlite3_errmsg(database) : "no database"));
+    }
+    sqlite3_free(message);
+    sqlite3_close(database);
+    ::remove(path);
+    return result == SQLITE_OK;
 }
 
 namespace {
@@ -266,6 +337,17 @@ void WebView::initializeProcess(const char* directory)
 
     dataDirectory() = String::fromUTF8(directory);
     FileSystem::makeAllDirectories(dataDirectory());
+    initializeFonts(dataDirectory());
+
+    // SQLite locks its files with fcntl(); if that is what fails on the
+    // phone, the engine is the only process using its databases, so the VFS
+    // without locks does.
+    CString testPath = FileSystem::pathByAppendingComponent(dataDirectory(), "sqlite-test.db").utf8();
+    if (!sqliteCanWrite(testPath.data(), nullptr) && sqliteCanWrite(testPath.data(), "unix-none")) {
+        WTFLogAlways("cookies: SQLite works without file locks, using that");
+        sqlite3_vfs_register(sqlite3_vfs_find("unix-none"), 1);
+    }
+
     // Cookies are kept in a database there. One that can't be written loses
     // every cookie without a word (sites that set one and redirect, as
     // ozon.ru does, then loop until curl gives up), so the engine tries one
