@@ -60,6 +60,7 @@ jobs:
             .github
             PerformanceTests
             Source/JavaScriptCore
+            Source/ThirdParty/ANGLE
             Source/ThirdParty/capstone
             Source/WTF
             Source/WebCore

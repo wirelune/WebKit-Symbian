@@ -24,6 +24,13 @@ cmake -S "$WEBKIT_SRC" -B "$build" -G Ninja -DPORT=Symbian \
   -DLIBXML2_INCLUDE_DIR="$D/include/libxml2" -DLIBXML2_LIBRARY="$D/lib/libxml2.a" \
   -DLIBXSLT_INCLUDE_DIR="$D/include" -DLIBXSLT_LIBRARIES="$D/lib/libxslt.a" \
   -DSQLite3_INCLUDE_DIR="$D/include" -DSQLite3_LIBRARY="$D/lib/libsqlite3.a" \
-  "$@" > "$WORK/webcore-configure.log"
-ninja -C "$build" -k 0 -j"$JOBS" > "$WORK/webcore-build.log"
+  "$@" > "$WORK/webcore-configure.log" 2>&1 || {
+  # The step's own log shows why, as the full logs are an artifact.
+  grep -E -B2 -A8 "CMake Error|error:" "$WORK/webcore-configure.log" | head -200
+  exit 1
+}
+ninja -C "$build" -k 0 -j"$JOBS" > "$WORK/webcore-build.log" || {
+  grep -E -A12 "^FAILED: |error:" "$WORK/webcore-build.log" | head -400
+  exit 1
+}
 ls -la "$build/lib"
