@@ -37,7 +37,13 @@ bool SetCWD(const char *dirName)
 
 bool UnsetEnvironmentVar(const char *variableName)
 {
+#if defined(__SYMBIAN32__)
+    // Open C's unsetenv() returns nothing.
+    unsetenv(variableName);
+    return true;
+#else
     return (unsetenv(variableName) == 0);
+#endif
 }
 
 bool SetEnvironmentVar(const char *variableName, const char *value)
@@ -59,6 +65,7 @@ const char *GetPathSeparatorForEnvironmentVar()
 std::string GetHelperExecutableDir()
 {
     std::string directory;
+#if !defined(__SYMBIAN32__)  // Open C has no dladdr().
     static int placeholderSymbol = 0;
     Dl_info dlInfo;
     if (dladdr(&placeholderSymbol, &dlInfo) != 0)
@@ -66,6 +73,7 @@ std::string GetHelperExecutableDir()
         std::string moduleName = dlInfo.dli_fname;
         directory              = moduleName.substr(0, moduleName.find_last_of('/') + 1);
     }
+#endif
     return directory;
 }
 
