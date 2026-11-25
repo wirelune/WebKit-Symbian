@@ -78,8 +78,7 @@ public:
     ~EngineClientPrivate()
     {
         Cancel();
-        if (starting)
-            process.Close();
+        process.Close();
         chunk.Close();
         session.Close();
     }
@@ -119,6 +118,7 @@ void EngineClientPrivate::start(const QSize &size, int dimension)
     logEnvironment();
     // An engine that runs already (a front end that died left it) serves
     // one client only; it ends once that one is gone.
+    process.Close();
     TInt error = process.Create(KWkEngineExe, KNullDesC);
     qDebug("engine: create wkengine.exe: %d", error);
     if (error) {
@@ -173,7 +173,9 @@ void EngineClientPrivate::RunL()
                 qPrintable(name), process.ExitReason());
         }
         qDebug("engine: rendezvous %d", status);
-        process.Close();
+        // Kept open while the engine runs, so that its death can be told.
+        if (!alive)
+            process.Close();
         // KErrAlreadyExists: another engine has the server name.
         if (status != KErrNone && (status != KErrAlreadyExists || alive)) {
             emit q->failed(status);
@@ -184,6 +186,12 @@ void EngineClientPrivate::RunL()
     }
     if (status < 0) {
         qWarning("engine: notification failed %d", status);
+        if (process.Handle() && process.ExitType() != EExitPending) {
+            TExitCategoryName category = process.ExitCategory();
+            QString name = toQString(category);
+            qWarning("engine: exited: type %d, %s %d", process.ExitType(),
+                qPrintable(name), process.ExitReason());
+        }
         connected = false;
         emit q->died(status);
         return;
