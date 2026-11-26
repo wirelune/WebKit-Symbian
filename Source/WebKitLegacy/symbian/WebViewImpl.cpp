@@ -129,8 +129,11 @@ static void initializeFonts(const String& directory)
     FileSystem::makeAllDirectories(fontDirectory);
     FileSystem::makeAllDirectories(cacheDirectory);
     CString xml = makeString("<fontconfig>"
+#if OS(SYMBIAN)
         "<dir>Z:/resource/fonts</dir><dir>C:/resource/fonts</dir>"
         "<dir>E:/resource/fonts</dir><dir>F:/resource/fonts</dir>"
+#endif
+        // The Windows test host sees only the phone's fonts, copied here.
         "<dir>", fontDirectory, "</dir><cachedir>", cacheDirectory, "</cachedir>"
         // The digit-only clock font must never stand in for text.
         "<selectfont><rejectfont><pattern><patelt name=\"family\"><string>Series 60 ZDigi</string></patelt></pattern></rejectfont></selectfont>"

@@ -26,6 +26,10 @@
 #include "config.h"
 #include "SharedBuffer.h"
 
+// The Symbian port lists this file for the phone and for its Windows test
+// host, which has platform/win/SharedBufferWin.cpp instead.
+#if !OS(WINDOWS)
+
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -72,3 +76,5 @@ RefPtr<SharedBuffer> SharedBuffer::createFromReadingFile(const String& filePath)
 }
 
 } // namespace WebCore
+
+#endif // !OS(WINDOWS)

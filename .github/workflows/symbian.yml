@@ -267,19 +267,58 @@ jobs:
           arch: x86
       - name: Inventory
         run: Tools/Symbian/host/ci-windows.ps1 -Step inventory
-      - name: Restore the host dependencies
-        uses: actions/cache@v4
+      # Each dependency cache is saved as soon as its step succeeds, so that a
+      # later failure does not throw away vcpkg's hour of building.
+      - name: Restore vcpkg's libraries
+        id: vcpkg-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: WebKitBuild/SymbianHost/vcpkg_installed
+          key: host-vcpkg-${{ hashFiles('Tools/Symbian/host/vcpkg.json', 'Tools/Symbian/host/triplets/*') }}
+      - name: vcpkg
+        if: steps.vcpkg-cache.outputs.cache-hit != 'true'
+        timeout-minutes: 200
+        run: Tools/Symbian/host/ci-windows.ps1 -Step vcpkg
+      - name: Save vcpkg's libraries
+        if: steps.vcpkg-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: WebKitBuild/SymbianHost/vcpkg_installed
+          key: ${{ steps.vcpkg-cache.outputs.cache-primary-key }}
+      - name: Restore the network libraries
+        id: net-cache
+        uses: actions/cache/restore@v4
         with:
           path: |
-            WebKitBuild/SymbianHost/vcpkg_installed
             WebKitBuild/SymbianHost/net/install
             WebKitBuild/SymbianHost/cacert.pem
-          key: host-deps-${{ hashFiles('Tools/Symbian/host/vcpkg.json', 'Tools/Symbian/host/build-net.ps1', 'Tools/Symbian/host/mbedtls-host.h', 'Tools/Symbian/scripts/patch-curl.sh', 'Tools/Symbian/shims/mbedtls-fs.*') }}
-      - name: Dependencies
+          key: host-net-${{ hashFiles('Tools/Symbian/host/vcpkg.json', 'Tools/Symbian/host/triplets/*', 'Tools/Symbian/host/build-net.ps1', 'Tools/Symbian/host/mbedtls-host.h', 'Tools/Symbian/scripts/patch-curl.sh', 'Tools/Symbian/shims/mbedtls-fs.*') }}
+      - name: Network libraries
+        if: steps.net-cache.outputs.cache-hit != 'true'
+        timeout-minutes: 40
         env:
           GH_TOKEN: ${{ github.token }}
-        run: Tools/Symbian/host/ci-windows.ps1 -Step deps
+        run: Tools/Symbian/host/ci-windows.ps1 -Step net
+      - name: Save the network libraries
+        if: steps.net-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            WebKitBuild/SymbianHost/net/install
+            WebKitBuild/SymbianHost/cacert.pem
+          key: ${{ steps.net-cache.outputs.cache-primary-key }}
       - name: Network test
+        timeout-minutes: 5
         run: Tools/Symbian/host/ci-windows.ps1 -Step test-net
       - name: Configure
         run: Tools/Symbian/host/ci-windows.ps1 -Step configure
+      - name: Build JSC
+        run: Tools/Symbian/host/ci-windows.ps1 -Step build-jsc
+      - name: Test JSC
+        timeout-minutes: 5
+        run: Tools/Symbian/host/ci-windows.ps1 -Step test-jsc
+      - name: Build
+        run: Tools/Symbian/host/ci-windows.ps1 -Step build
+      - name: Smoke test
+        timeout-minutes: 5
+        run: Tools/Symbian/host/ci-windows.ps1 -Step smoke

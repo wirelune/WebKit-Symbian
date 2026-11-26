@@ -1,0 +1,22 @@
+WebKit Symbian test host (wkhost.exe)
+
+The Symbian port's engine on Windows: the same WebKit code, settings and
+network stack (curl 7.88.1, mbedTLS 3.4.1 with the phone's configuration,
+nghttp2 1.52.0) as on the Nokia N8, in a window the size of the phone's view.
+JavaScript runs in the LLInt (WebKit 2.32 has no JIT on 32-bit Windows), and
+WebGL goes through ANGLE instead of the phone's Broadcom driver.
+
+Data directory: %LOCALAPPDATA%\WebKitQt (or --data DIR). It holds log.txt,
+log.old.txt, cookies.db, LocalStorage and the files below, as
+C:\Data\WebKitQt does on the phone.
+
+  fonts\          copy the phone's fonts here: everything in Z:\resource\fonts
+                  (20 files on the N8). The host sees no other fonts.
+  useragent.txt   first line replaces the User-Agent string
+  language.txt    first line is the preferred language (en-GB by default)
+  curl-verbose    while it exists, curl's trace goes to curl.txt
+
+Usage: wkhost.exe [URL] [--data DIR]
+
+The mouse acts as a finger: press, drag and release. The wheel scrolls.
+Type an address in the field at the top and press Enter.

@@ -1,0 +1,24 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>smoke</title>
+<!-- The test host's CI smoke test (ci-windows.ps1 -Step smoke): what the
+     engine reports goes to the console, which the engine writes to log.txt,
+     and the page is green so the screenshot shows that it painted. -->
+<body style="margin:0;background:#00ff00">
+<div id="out" style="font:20px sans-serif">...</div>
+<script>
+const results = [];
+try {
+    localStorage.setItem("k", "v");
+    results.push("localStorage " + localStorage.getItem("k"));
+} catch (e) {
+    results.push("localStorage " + e);
+}
+const gl = document.createElement("canvas").getContext("webgl");
+results.push("webgl " + (gl ? gl.getParameter(gl.VERSION) : "none"));
+results.push("ua " + navigator.userAgent);
+results.push("languages " + navigator.languages.join(","));
+results.push("screen " + screen.width + "x" + screen.height);
+console.log("smoke: " + results.join(" | "));
+document.getElementById("out").textContent = results.join("\n");
+</script>

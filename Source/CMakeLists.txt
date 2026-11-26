@@ -41,6 +41,11 @@ if (ENABLE_WEBKIT_LEGACY)
     add_subdirectory(WebKitLegacy)
 endif ()
 
+# The Symbian port's Windows test host (Tools/Symbian/host), around WebKitLegacy.
+if (PORT STREQUAL "SymbianHost")
+    add_subdirectory(${CMAKE_SOURCE_DIR}/Tools/Symbian/host ${CMAKE_BINARY_DIR}/wkhost)
+endif ()
+
 if (ENABLE_WEBKIT)
     add_subdirectory(WebKit)
 endif ()

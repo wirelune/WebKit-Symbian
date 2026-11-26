@@ -264,7 +264,7 @@ build_nghttp2() {
 build_curl() {
   fetch https://curl.se/download/curl-7.88.1.tar.xz curl-7.88.1
   local tls=$sdk_lib/mbedtls
-  "$REPO/scripts/patch-curl.sh" "$src/curl-7.88.1"
+  bash "$REPO/scripts/patch-curl.sh" "$src/curl-7.88.1"
   # TLS from the SDK's mbedTLS 3.4. HTTP(S) and local files (WebKit's curl
   # backend loads file: URLs through curl too). Open C has no socketpair(),
   # and curl's stand-in (a TCP connection to itself over the loopback) fails

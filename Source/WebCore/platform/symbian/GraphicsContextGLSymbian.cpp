@@ -36,7 +36,7 @@
 #include "config.h"
 #include "GraphicsContextGLOpenGL.h"
 
-#if ENABLE(WEBGL) && OS(SYMBIAN) && !USE(ANGLE)
+#if ENABLE(WEBGL) && PLATFORM(SYMBIAN) && !USE(ANGLE)
 
 #include "ExtensionsGLOpenGLES.h"
 #include <ANGLE/ShaderLang.h>
@@ -304,4 +304,4 @@ PlatformLayer* GraphicsContextGLOpenGL::platformLayer() const
 
 } // namespace WebCore
 
-#endif // ENABLE(WEBGL) && OS(SYMBIAN) && !USE(ANGLE)
+#endif // ENABLE(WEBGL) && PLATFORM(SYMBIAN) && !USE(ANGLE)

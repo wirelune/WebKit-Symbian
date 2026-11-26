@@ -26,16 +26,33 @@
 #include "CurlSSLHandle.h"
 
 #include <stdlib.h>
+#include <wtf/FileSystem.h>
+
+#if OS(WINDOWS)
+#include <windows.h>
+#endif
 
 namespace WebCore {
 
 // Trusted roots in PEM, installed with the browser; CURL_CA_BUNDLE overrides.
-static const char* defaultCACertPath = "C:/resource/webkit/cacert.pem";
+// On the phone they are in C:/resource/webkit; the Windows test host has
+// them next to its exe.
+static String defaultCACertPath()
+{
+#if OS(WINDOWS)
+    wchar_t module[MAX_PATH];
+    DWORD length = GetModuleFileNameW(nullptr, module, MAX_PATH);
+    return FileSystem::pathByAppendingComponent(
+        FileSystem::directoryName(String(reinterpret_cast<const UChar*>(module), length)), "cacert.pem");
+#else
+    return "C:/resource/webkit/cacert.pem"_s;
+#endif
+}
 
 void CurlSSLHandle::platformInitialize()
 {
     const char* path = getenv("CURL_CA_BUNDLE");
-    setCACertPath(String::fromUTF8(path && *path ? path : defaultCACertPath));
+    setCACertPath(path && *path ? String::fromUTF8(path) : defaultCACertPath());
 }
 
 } // namespace WebCore

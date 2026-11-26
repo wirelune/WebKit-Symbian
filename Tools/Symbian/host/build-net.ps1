@@ -22,7 +22,11 @@ function Invoke-Native([string]$exe, [string[]]$arguments) {
 }
 function Get-Source([string]$url, [string]$dir) {
     $archive = "$src\$(Split-Path $url -Leaf)"
-    if (-not (Test-Path $archive)) { Invoke-WebRequest $url -OutFile $archive }
+    Write-Host "== $dir"
+    if (-not (Test-Path $archive)) {
+        Invoke-Native 'curl.exe' @('--fail', '--location', '--retry', '3', '--max-time', '600', '--silent',
+            '--show-error', '--output', $archive, $url)
+    }
     if (-not (Test-Path "$src\$dir")) { Invoke-Native "$env:SystemRoot\System32\tar.exe" @('-xf', $archive, '-C', $src) }
 }
 function Build-CMake([string]$dir, [string[]]$options) {
@@ -44,18 +48,19 @@ Build-CMake 'mbedtls-3.4.1' @('-DENABLE_PROGRAMS=OFF', '-DENABLE_TESTING=OFF', '
 Copy-Item "$mbedInclude\symbian_mbedtls" "$out\include" -Recurse -Force
 Copy-Item "$mbedInclude\mbedtls-host.h" "$out\include" -Force
 
+Write-Host '== mbedtls_fs'
 # The file functions the phone's mbedTLS lacks; curl reads its CA bundle through them.
 Copy-Item "$Symbian\shims\mbedtls-fs.h" "$out\include" -Force
 Invoke-Native 'cl' @('/nologo', '/c', '/O2', '/MD', "/I$out\include", "$Symbian\shims\mbedtls-fs.c", "/Fo$src\mbedtls-fs.obj")
 Invoke-Native 'lib' @('/nologo', "/OUT:$out\lib\mbedtls_fs.lib", "$src\mbedtls-fs.obj")
 
-Get-Source 'https://github.com/nghttp2/nghttp2/releases/download/v1.52.0/nghttp2-1.52.0.tar.xz' 'nghttp2-1.52.0'
+Get-Source 'https://github.com/nghttp2/nghttp2/releases/download/v1.52.0/nghttp2-1.52.0.tar.gz' 'nghttp2-1.52.0'
 Build-CMake 'nghttp2-1.52.0' @('-DENABLE_LIB_ONLY=ON', '-DENABLE_STATIC_LIB=ON', '-DENABLE_SHARED_LIB=OFF',
     '-DENABLE_DOC=OFF', '-DENABLE_EXAMPLES=OFF', '-DENABLE_HPACK_TOOLS=OFF', '-DWITH_LIBXML2=OFF', '-DWITH_JEMALLOC=OFF')
 $nghttp2 = Get-ChildItem "$out\lib" -Filter 'nghttp2*.lib' | Select-Object -First 1
 if (-not $nghttp2) { throw 'nghttp2 did not install a library' }
 
-Get-Source 'https://curl.se/download/curl-7.88.1.tar.xz' 'curl-7.88.1'
+Get-Source 'https://curl.se/download/curl-7.88.1.tar.gz' 'curl-7.88.1'
 Invoke-Native 'bash' @("$Symbian/scripts/patch-curl.sh", ("$src\curl-7.88.1" -replace '\', '/'))
 $cflags = "/DWIN32 /D_WINDOWS /DNGHTTP2_STATICLIB /DSYMBIAN_MBEDTLS_FS /I$($out -replace '\', '/')/include"
 Build-CMake 'curl-7.88.1' @('-DBUILD_CURL_EXE=OFF', '-DBUILD_TESTING=OFF', '-DBUILD_SHARED_LIBS=OFF',

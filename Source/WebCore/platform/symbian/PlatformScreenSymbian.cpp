@@ -26,7 +26,9 @@
 #include "PlatformScreen.h"
 
 #include "FloatRect.h"
+#if OS(SYMBIAN)
 #include <wtf/symbian/SymbianSystem.h>
+#endif
 
 namespace WebCore {
 
@@ -53,9 +55,12 @@ bool screenHasInvertedColors()
 
 FloatRect screenRect(Widget*)
 {
+    // The N8's portrait screen; the Windows test host reports the same.
     int width = 360;
     int height = 640;
+#if OS(SYMBIAN)
     WTF::SymbianSystem::displaySize(width, height);
+#endif
     return { 0, 0, static_cast<float>(width), static_cast<float>(height) };
 }
 

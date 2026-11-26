@@ -21,3 +21,5 @@
 // THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // The Windows test host: files that stand in for Open C ones in SourcesSymbian.txt.
+
+platform/win/SharedBufferWin.cpp
