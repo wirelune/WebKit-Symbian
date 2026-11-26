@@ -66,7 +66,7 @@ switch ($Step) {
         Invoke-Native 'cl' @('/nologo', '/MD', "/I$Net\include", '/DCURL_STATICLIB',
             "$PSScriptRoot\tests\curl-tls13.c", "/Fe$Work\curl-tls13.exe", "/Fo$Work\curl-tls13.obj", '/link',
             $curl, $nghttp2, "$Net\lib\mbedtls.lib", "$Net\lib\mbedx509.lib", "$Net\lib\mbedcrypto.lib",
-            "$Net\lib\mbedtls_fs.lib", $zlib, 'ws2_32.lib', 'crypt32.lib', 'advapi32.lib',
+            "$Net\lib\mbedtls_fs.lib", $zlib, "$Vcpkg\lib\psl.lib", 'ws2_32.lib', 'crypt32.lib', 'advapi32.lib',
             'bcrypt.lib', 'wldap32.lib', 'normaliz.lib')
         $env:PATH = "$Vcpkg\bin;$env:PATH"
         Invoke-Native "$Work\curl-tls13.exe" @('https://www.google.com/', "$Work\cacert.pem")
