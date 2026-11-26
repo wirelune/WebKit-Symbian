@@ -82,7 +82,7 @@ Web Inspector, а исправления без переделок перено�
 * `log.txt` в том же формате: время, `threads`, `memory`, console.
   `curl.txt` — при файле `curl-verbose`.
 * `useragent.txt` и язык (`language.txt`, по умолчанию `en-GB`, как сейчас на N8) читаются так же,
-  как в `EngineServer.cpp`. Общий код чтения переносится в слой встраивания.
+  как в `EngineServer.cpp`. Хост читает их сам: это два файла по строке, общий код не нужен.
 * Командная строка: `wkhost.exe [URL] [--inspect]`.
 
 ### 4. Web Inspector
