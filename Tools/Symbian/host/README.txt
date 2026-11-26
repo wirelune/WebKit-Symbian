@@ -3,7 +3,8 @@ WebKit Symbian test host (wkhost.exe)
 The Symbian port's engine on Windows: the same WebKit code, settings and
 network stack (curl 7.88.1, mbedTLS 3.4.1 with the phone's configuration,
 nghttp2 1.52.0) as on the Nokia N8, in a window the size of the phone's view.
-JavaScript runs in the LLInt (WebKit 2.32 has no JIT on 32-bit Windows), and
+JavaScript runs in the C++ interpreter (WebKit 2.32 has neither a JIT nor an
+assembly interpreter for 32-bit x86), with the phone's 32-bit values, and
 WebGL goes through ANGLE instead of the phone's Broadcom driver.
 
 Data directory: %LOCALAPPDATA%\WebKitQt (or --data DIR). It holds log.txt,

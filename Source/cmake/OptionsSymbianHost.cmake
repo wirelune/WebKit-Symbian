@@ -1,9 +1,11 @@
 # The Symbian port's Windows test host: the phone's engine (OptionsSymbianCommon)
 # on 32-bit x86 Windows, for debugging pages with Web Inspector. WebKit 2.32 has
-# no JIT on 32-bit x86 Windows, so JavaScript runs in the LLInt; values are
-# JSVALUE32_64 as on the phone. See Tools/Symbian/docs/WindowsHost-design.md.
+# neither a JIT nor an assembly LLInt for 32-bit x86 (LowLevelInterpreter.asm
+# knows only ARM and MIPS there), so JavaScript runs in the C++ LLInt (C_LOOP);
+# values are JSVALUE32_64 as on the phone. See Tools/Symbian/docs/WindowsHost-design.md.
 set(SYMBIAN_ENABLE_JIT OFF)
 set(SYMBIAN_ENABLE_DFG_JIT OFF)
+set(SYMBIAN_ENABLE_C_LOOP ON)
 find_package(Threads REQUIRED)
 include(OptionsSymbianCommon)
 
