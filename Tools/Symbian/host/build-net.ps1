@@ -61,8 +61,8 @@ $nghttp2 = Get-ChildItem "$out\lib" -Filter 'nghttp2*.lib' | Select-Object -Firs
 if (-not $nghttp2) { throw 'nghttp2 did not install a library' }
 
 Get-Source 'https://curl.se/download/curl-7.88.1.tar.gz' 'curl-7.88.1'
-Invoke-Native 'bash' @("$Symbian/scripts/patch-curl.sh", ("$src\curl-7.88.1" -replace '\', '/'))
-$cflags = "/DWIN32 /D_WINDOWS /DNGHTTP2_STATICLIB /DSYMBIAN_MBEDTLS_FS /I$($out -replace '\', '/')/include"
+Invoke-Native 'bash' @("$Symbian/scripts/patch-curl.sh", ("$src\curl-7.88.1" -replace '\\', '/'))
+$cflags = "/DWIN32 /D_WINDOWS /DNGHTTP2_STATICLIB /DSYMBIAN_MBEDTLS_FS /I$($out -replace '\\', '/')/include"
 Build-CMake 'curl-7.88.1' @('-DBUILD_CURL_EXE=OFF', '-DBUILD_TESTING=OFF', '-DBUILD_SHARED_LIBS=OFF',
     "-DCMAKE_C_FLAGS=$cflags", '-DCURL_USE_SCHANNEL=OFF', '-DCURL_USE_OPENSSL=OFF', '-DCURL_USE_MBEDTLS=ON',
     '-DUSE_NGHTTP2=ON', '-DENABLE_THREADED_RESOLVER=ON', '-DENABLE_IPV6=OFF', '-DCURL_ZLIB=ON',
