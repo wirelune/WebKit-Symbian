@@ -9,6 +9,12 @@
 
 #include <stdint.h>
 
+/* windows.h defines FAR as far, and ANGLE's common/platform.h then undefines
+ * far; zlib's zconf.h uses FAR. */
+#if defined(_WIN32) && !defined(far)
+#define far
+#endif
+
 /* TODO(cavalcantii): remove support for Chromium ever building with a system
  * zlib.
  */
