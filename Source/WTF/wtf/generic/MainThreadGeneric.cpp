@@ -31,14 +31,36 @@
  */
 
 #include "config.h"
+#if OS(WINDOWS)
+#include <wtf/Threading.h>
+#else
 #include <pthread.h>
 #if HAVE(PTHREAD_NP_H)
 #include <pthread_np.h>
+#endif
 #endif
 
 #include <wtf/RunLoop.h>
 
 namespace WTF {
+
+#if OS(WINDOWS)
+// The generic event loop on Windows, as the Symbian port's test host runs it:
+// Windows threads have no pthread_t, so the main thread is known by its ID,
+// as in win/MainThreadWin.cpp.
+static ThreadIdentifier mainThread { 0 };
+
+void initializeMainThreadPlatform()
+{
+    mainThread = Thread::currentID();
+}
+
+bool isMainThread()
+{
+    return mainThread == Thread::currentID();
+}
+
+#else
 
 #if !HAVE(PTHREAD_MAIN_NP)
 static pthread_t mainThread;
@@ -59,5 +81,7 @@ bool isMainThread()
     return pthread_equal(pthread_self(), mainThread);
 #endif
 }
+
+#endif // OS(WINDOWS)
 
 } // namespace WTF
