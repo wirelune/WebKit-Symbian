@@ -72,9 +72,17 @@ switch ($Step) {
         Invoke-Native "$Work\curl-tls13.exe" @('https://www.google.com/', "$Work\cacert.pem")
     }
     'configure' {
+        # gperf and bison from the runner's MSYS2, by path: its usr\bin on PATH
+        # would put its link.exe before MSVC's.
+        $msys = 'C:\msys64\usr\bin'
+        if (-not (Test-Path "$msys\gperf.exe") -or -not (Test-Path "$msys\bison.exe")) {
+            Invoke-Native "$msys\pacman.exe" @('-Sy', '--noconfirm', '--needed', 'gperf', 'bison')
+        }
         Invoke-Native 'cmake' @('-S', $Repo, '-B', "$Work\build", '-G', 'Ninja',
             '-DPORT=SymbianHost', '-DCMAKE_BUILD_TYPE=RelWithDebInfo',
             '-DCMAKE_C_COMPILER=cl', '-DCMAKE_CXX_COMPILER=cl',
+            "-DGPERF_EXECUTABLE=$($msys -replace '\\', '/')/gperf.exe",
+            "-DBISON_EXECUTABLE=$($msys -replace '\\', '/')/bison.exe",
             "-DCMAKE_PREFIX_PATH=$Net;$Vcpkg", '-DDEVELOPER_MODE=OFF')
     }
     'build-jsc' {
