@@ -36,7 +36,7 @@
 
 namespace WebCore {
 
-#if OS(SYMBIAN)
+#if PLATFORM(SYMBIAN)
 // Symbian^3 look: silver gradient buttons, solid blue focus and highlight, larger toggles for touch.
 static const unsigned focusLineWidth = 2;
 static constexpr auto focusRingColor = SRGBA<uint8_t> { 41, 128, 214, 220 };
@@ -117,7 +117,7 @@ Color ThemeAdwaita::activeSelectionForegroundColor() const
 
 Color ThemeAdwaita::activeSelectionBackgroundColor() const
 {
-#if OS(SYMBIAN)
+#if PLATFORM(SYMBIAN)
     return SRGBA<uint8_t> { 41, 128, 214 };
 #else
     return SRGBA<uint8_t> { 52, 132, 228 };
@@ -144,7 +144,7 @@ void ThemeAdwaita::paintFocus(GraphicsContext& graphicsContext, const FloatRect&
     FloatRect focusRect = rect;
     focusRect.inflate(offset);
     Path path;
-#if OS(SYMBIAN)
+#if PLATFORM(SYMBIAN)
     path.addRoundedRect(focusRect, { buttonCornerRadius, buttonCornerRadius });
 #else
     path.addRoundedRect(focusRect, { 2, 2 });
@@ -156,7 +156,7 @@ void ThemeAdwaita::paintFocus(GraphicsContext& graphicsContext, const Path& path
 {
     GraphicsContextStateSaver stateSaver(graphicsContext);
 
-#if OS(SYMBIAN)
+#if PLATFORM(SYMBIAN)
     graphicsContext.setStrokeThickness(focusLineWidth);
     graphicsContext.setStrokeColor(color);
     graphicsContext.strokePath(path);
@@ -316,7 +316,7 @@ void ThemeAdwaita::paintCheckbox(ControlStates& states, GraphicsContext& graphic
     graphicsContext.setFillRule(WindRule::NonZero);
     if (!(states.states() & ControlStates::EnabledState))
         graphicsContext.setFillColor(toggleBackgroundDisabledColor);
-#if OS(SYMBIAN)
+#if PLATFORM(SYMBIAN)
     else if (states.states() & (ControlStates::CheckedState | ControlStates::IndeterminateState))
         graphicsContext.setFillColor(toggleCheckedBackgroundColor);
 #endif
@@ -381,7 +381,7 @@ void ThemeAdwaita::paintRadio(ControlStates& states, GraphicsContext& graphicsCo
     graphicsContext.setFillRule(WindRule::NonZero);
     if (!(states.states() & ControlStates::EnabledState))
         graphicsContext.setFillColor(toggleBackgroundDisabledColor);
-#if OS(SYMBIAN)
+#if PLATFORM(SYMBIAN)
     else if (states.states() & ControlStates::CheckedState)
         graphicsContext.setFillColor(toggleCheckedBackgroundColor);
 #endif
@@ -393,7 +393,7 @@ void ThemeAdwaita::paintRadio(ControlStates& states, GraphicsContext& graphicsCo
     path.clear();
 
     if (states.states() & ControlStates::CheckedState) {
-#if OS(SYMBIAN)
+#if PLATFORM(SYMBIAN)
         fieldRect.inflate(-fieldRect.width() * 0.3);
 #else
         fieldRect.inflate(-(fieldRect.width() - fieldRect.width() * 0.70));
@@ -415,7 +415,7 @@ void ThemeAdwaita::paintButton(ControlStates& states, GraphicsContext& graphicsC
     GraphicsContextStateSaver stateSaver(graphicsContext);
 
     FloatRect fieldRect = zoomedRect;
-#if OS(SYMBIAN)
+#if PLATFORM(SYMBIAN)
     FloatSize corner(buttonCornerRadius, buttonCornerRadius);
 #else
     FloatSize corner(5, 5);
@@ -432,7 +432,7 @@ void ThemeAdwaita::paintButton(ControlStates& states, GraphicsContext& graphicsC
 
     path.addRoundedRect(fieldRect, corner);
     graphicsContext.setFillRule(WindRule::NonZero);
-#if OS(SYMBIAN)
+#if PLATFORM(SYMBIAN)
     if (!(states.states() & ControlStates::EnabledState))
         fillVerticalGradient(graphicsContext, path, fieldRect, buttonBackgroundDisabledColor, buttonBackgroundDisabledColor);
     else if (states.states() & ControlStates::PressedState)

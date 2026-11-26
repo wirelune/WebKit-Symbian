@@ -122,11 +122,11 @@ public:
     Seconds connectTimeout() const { return m_connectTimeout; }
     Seconds defaultTimeoutInterval() const { return m_defaultTimeoutInterval; }
 
-#if !defined(NDEBUG) || OS(SYMBIAN)
+#if !defined(NDEBUG) || PLATFORM(SYMBIAN)
     FILE* getLogFile() const { return m_logFile; }
     bool isVerbose() const { return m_verbose; }
 #endif
-#if OS(SYMBIAN)
+#if PLATFORM(SYMBIAN)
     // A time-stamped line in curl's trace, when it is on.
     void trace(const char* format, ...) WTF_ATTRIBUTE_PRINTF(2, 3);
 #endif
@@ -149,7 +149,7 @@ private:
     Seconds m_connectTimeout { 30.0 };
     Seconds m_defaultTimeoutInterval { 60.0 };
 
-#if !defined(NDEBUG) || OS(SYMBIAN)
+#if !defined(NDEBUG) || PLATFORM(SYMBIAN)
     FILE* m_logFile { nullptr };
     bool m_verbose { false };
 #endif
@@ -313,7 +313,7 @@ public:
     CURLcode send(const uint8_t*, size_t, size_t&);
     CURLcode receive(uint8_t*, size_t, size_t&);
 
-#if !defined(NDEBUG) || OS(SYMBIAN)
+#if !defined(NDEBUG) || PLATFORM(SYMBIAN)
     void enableVerboseIfUsed();
     void enableStdErrIfUsed();
 #endif

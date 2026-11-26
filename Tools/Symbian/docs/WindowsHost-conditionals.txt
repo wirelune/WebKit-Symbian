@@ -1,0 +1,24 @@
+Symbian conditionals outside the Symbian-only directories (host/list-conditionals.sh,
+2026-11-26), and what each became. PLATFORM: the port's behaviour, built on the
+Windows test host too. OS: a call into Symbian or Open C, phone only.
+
+PLATFORM  WTF/wtf/Platform.h:151                     Web Crypto through mbedTLS
+PLATFORM  WTF/wtf/PlatformUse.h:279                  USE_NEW_THEME (Adwaita controls)
+PLATFORM  WebCore/editing/libwpe/EditorLibWPE.cpp    the port's editor pasteboard
+PLATFORM  WebCore/platform/Pasteboard.h:100
+PLATFORM  WebCore/platform/PasteboardStrategy.h:93
+PLATFORM  WebCore/platform/libwpe/PasteboardLibWPE.cpp
+PLATFORM  WebCore/html/HTMLCanvasElement.cpp:397     WebGL without compositing
+PLATFORM  WebCore/platform/adwaita/ThemeAdwaita.cpp  Symbian^3 look of form controls
+PLATFORM  WebCore/rendering/RenderThemeAdwaita.cpp
+PLATFORM  WebCore/platform/graphics/opengl/GraphicsContextGLOpenGL.h:757  WebGL backend members
+PLATFORM  WebCore/platform/network/curl/CurlContext.{h,cpp}  curl's trace in release builds
+PLATFORM  WebCore/platform/network/curl/CurlSSLVerifierMbedTLS.cpp  TLS lines in the trace
+PLATFORM  WebCore/platform/network/curl/CurlRequest.cpp:531  weighted Accept-Language
+OS        WebCore/platform/network/DNS.h:32          Open C's socket headers
+OS        WebCore/platform/network/curl/CurlRequestScheduler.cpp  usleep without socketpair()
+OS        JavaScriptCore/assembler/*, jsc.cpp        ARMv6 JIT, the phone's jsc.exe
+OS        WTF/wtf/{FastMalloc,InlineASM,PlatformEnable,PlatformHave,PlatformOS,
+          PlatformRegisters,RAMSize,RandomDevice,StackBounds,Threading,WTFConfig}.*,
+          posix/*, threads/Signals.*                 Open C, EKA2 threads and memory
+OS        ThirdParty/ANGLE (__SYMBIAN32__)           Open C gaps in ANGLE's common code

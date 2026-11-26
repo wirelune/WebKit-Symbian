@@ -26,7 +26,7 @@
 #include "config.h"
 #include "Pasteboard.h"
 
-#if USE(LIBWPE) || OS(SYMBIAN)
+#if USE(LIBWPE) || PLATFORM(SYMBIAN)
 
 #include "NotImplemented.h"
 #include "PasteboardStrategy.h"
@@ -159,4 +159,4 @@ void Pasteboard::write(const Color&)
 
 } // namespace WebCore
 
-#endif // USE(LIBWPE) || OS(SYMBIAN)
+#endif // USE(LIBWPE) || PLATFORM(SYMBIAN)

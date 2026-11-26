@@ -4,6 +4,10 @@
 # SDK's E32 flow.
 find_package(Threads REQUIRED)
 
+# PLATFORM(SYMBIAN): the port's behaviour, also built on its Windows test host
+# (OptionsSymbianHost.cmake). OS(SYMBIAN) is left to calls into Symbian.
+add_definitions(-DBUILDING_SYMBIAN__)
+
 set(CMAKE_C_VISIBILITY_PRESET hidden)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)

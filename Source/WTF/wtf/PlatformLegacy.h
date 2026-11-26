@@ -50,6 +50,9 @@
 #define WTF_PLATFORM_GTK 1
 #elif defined(BUILDING_WPE__)
 #define WTF_PLATFORM_WPE 1
+#elif defined(BUILDING_SYMBIAN__)
+/* PLATFORM(SYMBIAN) - the Symbian port: on the phone, and on its Windows test host */
+#define WTF_PLATFORM_SYMBIAN 1
 #elif defined(BUILDING_JSCONLY__)
 /* JSCOnly does not provide PLATFORM() macro */
 #elif OS(MAC_OS_X)

@@ -394,7 +394,7 @@ CanvasRenderingContext2D* HTMLCanvasElement::getContext2d(const String& type)
 
 static bool requiresAcceleratedCompositingForWebGL()
 {
-#if PLATFORM(GTK) || PLATFORM(WIN_CAIRO) || OS(SYMBIAN)
+#if PLATFORM(GTK) || PLATFORM(WIN_CAIRO) || PLATFORM(SYMBIAN)
     // Symbian: nothing composites; the canvas paints the drawing it reads
     // back (platform/symbian/GraphicsContextGLSymbian.cpp).
     return false;

@@ -754,7 +754,7 @@ private:
 #elif PLATFORM(WIN) && USE(CA)
     friend class GraphicsContextGLOpenGLPrivate;
     std::unique_ptr<GraphicsContextGLOpenGLPrivate> m_private;
-#elif OS(SYMBIAN)
+#elif PLATFORM(SYMBIAN)
     // The EGLContext and the EGLSurface (a 1x1 pbuffer) of this context;
     // see platform/symbian/GraphicsContextGLSymbian.cpp.
     void* m_eglContext { nullptr };

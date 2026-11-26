@@ -528,7 +528,7 @@ int CurlRequest::didReceiveDebugInfo(curl_infotype type, char* data, size_t size
 
 void CurlRequest::appendAcceptLanguageHeader(HTTPHeaderMap& header)
 {
-#if OS(SYMBIAN)
+#if PLATFORM(SYMBIAN)
     // As other browsers send it: each language and then its base language,
     // with falling quality values ("ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7").
     Vector<String> languages;

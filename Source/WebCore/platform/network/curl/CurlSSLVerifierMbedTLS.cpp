@@ -25,7 +25,7 @@
 #include "config.h"
 #include "CurlSSLVerifier.h"
 
-#if OS(SYMBIAN)
+#if PLATFORM(SYMBIAN)
 #include "CurlContext.h"
 #endif
 
@@ -67,7 +67,7 @@ CurlSSLVerifier::CurlSSLVerifier(void* sslCtx)
 int CurlSSLVerifier::verifyCallback(void* data, mbedtls_x509_crt* certificate, int depth, uint32_t* flags)
 {
     auto* verifier = static_cast<CurlSSLVerifier*>(data);
-#if OS(SYMBIAN)
+#if PLATFORM(SYMBIAN)
     CurlContext::singleton().trace("TLS certificate at depth %d, flags %x", depth, static_cast<unsigned>(*flags));
 #endif
     if (depth < 0)

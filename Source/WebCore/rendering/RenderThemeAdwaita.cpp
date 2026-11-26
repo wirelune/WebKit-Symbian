@@ -45,7 +45,7 @@
 namespace WebCore {
 
 static const int textFieldBorderSize = 1;
-#if OS(SYMBIAN)
+#if PLATFORM(SYMBIAN)
 // Symbian^3 look: a darker field border and squarer corners, matching the AVKON editors.
 static const float textFieldCornerRadius = 3;
 static constexpr auto textFieldBorderColor = SRGBA<uint8_t> { 150, 150, 150 };
@@ -267,7 +267,7 @@ LengthBox RenderThemeAdwaita::popupInternalPaddingBox(const RenderStyle& style, 
         return { };
 
     unsigned arrowSpace = menuListButtonArrowSize;
-#if OS(SYMBIAN)
+#if PLATFORM(SYMBIAN)
     arrowSpace += menuListButtonSeparatorGap;
 #endif
     int leftPadding = menuListButtonPadding + (style.direction() == TextDirection::RTL ? arrowSpace : 0);
@@ -299,7 +299,7 @@ bool RenderThemeAdwaita::paintMenuList(const RenderObject& renderObject, const P
         fieldRect.move(menuListButtonPadding, (fieldRect.height() / 2.) - (menuListButtonArrowSize / 2));
     fieldRect.setWidth(menuListButtonArrowSize);
     fieldRect.setHeight(menuListButtonArrowSize);
-#if OS(SYMBIAN)
+#if PLATFORM(SYMBIAN)
     if (rect.height() > menuListButtonArrowSize) {
         float separatorX = renderObject.style().direction() == TextDirection::LTR ? fieldRect.x() - menuListButtonSeparatorGap / 2. : fieldRect.maxX() + menuListButtonSeparatorGap / 2.;
         float inset = rect.height() / 5.;

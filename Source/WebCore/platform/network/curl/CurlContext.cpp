@@ -40,10 +40,10 @@
 #include <wtf/NeverDestroyed.h>
 #include <wtf/text/CString.h>
 
-#if OS(SYMBIAN)
+#if PLATFORM(SYMBIAN)
 #include <stdarg.h>
-#include <sys/time.h>
 #include <time.h>
+#include <wtf/WallTime.h>
 #endif
 
 #if OS(WINDOWS)
@@ -125,13 +125,13 @@ CurlContext::CurlContext()
     m_scheduler = makeUnique<CurlRequestScheduler>(maxConnects, maxTotalConnections, maxHostConnections);
 
 // Symbian's release builds keep curl's trace, which is all a phone can report.
-#if !defined(NDEBUG) || OS(SYMBIAN)
+#if !defined(NDEBUG) || PLATFORM(SYMBIAN)
     m_verbose = envVar.defined("DEBUG_CURL");
 
     auto logFile = envVar.read("CURL_LOG_FILE");
     if (logFile) {
         m_logFile = fopen(logFile, "a");
-#if OS(SYMBIAN)
+#if PLATFORM(SYMBIAN)
         // Phones report problems through this file: keep it current if the
         // browser hangs or crashes.
         if (m_logFile)
@@ -148,7 +148,7 @@ CurlContext::CurlContext()
 
 CurlContext::~CurlContext()
 {
-#if !defined(NDEBUG) || OS(SYMBIAN)
+#if !defined(NDEBUG) || PLATFORM(SYMBIAN)
     if (m_logFile)
         fclose(m_logFile);
 #endif
@@ -172,7 +172,7 @@ CurlStreamScheduler& CurlContext::streamScheduler()
     return sharedInstance;
 }
 
-#if OS(SYMBIAN)
+#if PLATFORM(SYMBIAN)
 void CurlContext::trace(const char* format, ...)
 {
     if (!m_verbose || !m_logFile)
@@ -183,13 +183,16 @@ void CurlContext::trace(const char* format, ...)
     vsnprintf(message, sizeof(message), format, arguments);
     va_end(arguments);
 
-    struct timeval now;
-    gettimeofday(&now, nullptr);
-    time_t seconds = now.tv_sec;
+    double now = WallTime::now().secondsSinceEpoch().value();
+    time_t seconds = static_cast<time_t>(now);
     struct tm local;
+#if OS(WINDOWS)
+    localtime_s(&local, &seconds);
+#else
     localtime_r(&seconds, &local);
+#endif
     fprintf(m_logFile, "%02d:%02d:%02d.%03d WebKit: %s\n", local.tm_hour, local.tm_min, local.tm_sec,
-        static_cast<int>(now.tv_usec / 1000), message);
+        static_cast<int>((now - seconds) * 1000), message);
 }
 #endif
 
@@ -327,7 +330,7 @@ CurlHandle::CurlHandle()
 
     enableProxyIfExists();
 
-#if !defined(NDEBUG) || OS(SYMBIAN)
+#if !defined(NDEBUG) || PLATFORM(SYMBIAN)
     enableVerboseIfUsed();
     enableStdErrIfUsed();
 #endif
@@ -384,7 +387,7 @@ CURLcode CurlHandle::willSetupSslCtx(void* sslCtx)
     if (!sslCtx)
         return CURLE_ABORTED_BY_CALLBACK;
 
-#if OS(SYMBIAN)
+#if PLATFORM(SYMBIAN)
     CurlContext::singleton().trace("TLS configured for %s", m_url.host().utf8().data());
 #endif
     if (!m_sslVerifier)
@@ -931,7 +934,7 @@ int CurlHandle::expectedSizeOfCurlOffT()
     return expectedSizeOfCurlOffT;
 }
 
-#if !defined(NDEBUG) || OS(SYMBIAN)
+#if !defined(NDEBUG) || PLATFORM(SYMBIAN)
 
 void CurlHandle::enableVerboseIfUsed()
 {
