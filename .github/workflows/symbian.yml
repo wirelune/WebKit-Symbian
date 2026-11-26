@@ -123,7 +123,7 @@ jobs:
         id: deps
         with:
           path: WebKitBuild/Symbian/deps/install
-          key: deps-${{ hashFiles('Tools/Symbian/scripts/build-deps.sh', 'Tools/Symbian/shims/**', 'Tools/Symbian/scripts/common.sh', 'Tools/Symbian/toolchain/**') }}
+          key: deps-${{ hashFiles('Tools/Symbian/scripts/build-deps.sh', 'Tools/Symbian/scripts/patch-curl.sh', 'Tools/Symbian/shims/**', 'Tools/Symbian/scripts/common.sh', 'Tools/Symbian/toolchain/**') }}
       - name: Restore the compiler cache
         uses: actions/cache/restore@v4
         with:
@@ -241,6 +241,10 @@ jobs:
     defaults:
       run:
         shell: pwsh
+    env:
+      # The phone's job builds through ccache; this one does not.
+      CMAKE_C_COMPILER_LAUNCHER: ''
+      CMAKE_CXX_COMPILER_LAUNCHER: ''
     steps:
       - uses: actions/checkout@v4
         with:
@@ -263,3 +267,19 @@ jobs:
           arch: x86
       - name: Inventory
         run: Tools/Symbian/host/ci-windows.ps1 -Step inventory
+      - name: Restore the host dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            WebKitBuild/SymbianHost/vcpkg_installed
+            WebKitBuild/SymbianHost/net/install
+            WebKitBuild/SymbianHost/cacert.pem
+          key: host-deps-${{ hashFiles('Tools/Symbian/host/vcpkg.json', 'Tools/Symbian/host/build-net.ps1', 'Tools/Symbian/host/mbedtls-host.h', 'Tools/Symbian/scripts/patch-curl.sh', 'Tools/Symbian/shims/mbedtls-fs.*') }}
+      - name: Dependencies
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: Tools/Symbian/host/ci-windows.ps1 -Step deps
+      - name: Network test
+        run: Tools/Symbian/host/ci-windows.ps1 -Step test-net
+      - name: Configure
+        run: Tools/Symbian/host/ci-windows.ps1 -Step configure

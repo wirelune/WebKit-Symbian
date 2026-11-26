@@ -29,5 +29,10 @@ list(APPEND WebKitLegacy_PUBLIC_FRAMEWORK_HEADERS
 )
 
 # The shared WebKitLegacy sources expect a prefix header instead of config.h.
-set_property(SOURCE ${WebKitLegacy_SOURCES} APPEND PROPERTY COMPILE_OPTIONS
-    -include "${WEBKITLEGACY_DIR}/symbian/WebKitPrefix.h")
+if (MSVC)
+    set_property(SOURCE ${WebKitLegacy_SOURCES} APPEND PROPERTY COMPILE_OPTIONS
+        "/FI${WEBKITLEGACY_DIR}/symbian/WebKitPrefix.h")
+else ()
+    set_property(SOURCE ${WebKitLegacy_SOURCES} APPEND PROPERTY COMPILE_OPTIONS
+        -include "${WEBKITLEGACY_DIR}/symbian/WebKitPrefix.h")
+endif ()

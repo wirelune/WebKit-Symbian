@@ -1,0 +1,32 @@
+{
+  "name": "symbian-webkit-host",
+  "version-string": "0",
+  "description": "Libraries of the Symbian port's Windows test host (Tools/Symbian/docs/WindowsHost-design.md); curl, mbedTLS and nghttp2 come from build-net.ps1, as on the phone.",
+  "dependencies": [
+    {
+      "name": "cairo",
+      "features": [
+        "freetype",
+        "fontconfig"
+      ]
+    },
+    "pixman",
+    "freetype",
+    {
+      "name": "harfbuzz",
+      "features": [
+        "icu"
+      ]
+    },
+    "fontconfig",
+    "icu",
+    "libxml2",
+    "libxslt",
+    "sqlite3",
+    "libjpeg-turbo",
+    "libpng",
+    "libwebp",
+    "libpsl",
+    "zlib"
+  ]
+}

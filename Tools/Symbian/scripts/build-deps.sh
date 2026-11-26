@@ -264,33 +264,7 @@ build_nghttp2() {
 build_curl() {
   fetch https://curl.se/download/curl-7.88.1.tar.xz curl-7.88.1
   local tls=$sdk_lib/mbedtls
-  # The CA bundle is read by shims/mbedtls-fs.c, the SDK's mbedTLS having no
-  # file functions (no MBEDTLS_FS_IO).
-  local vtls=$src/curl-7.88.1/lib/vtls/mbedtls.c
-  grep -q 'mbedtls-fs.h' "$vtls" || sed -i -e 's/^#ifdef MBEDTLS_FS_IO$/#if defined(MBEDTLS_FS_IO) || defined(__SYMBIAN32__)/' \
-    -e 's|^#include <mbedtls/sha256.h>$|&\n#ifdef __SYMBIAN32__\n#include "mbedtls-fs.h"\n#endif|' "$vtls"
-  grep -q 'mbedtls-fs.h' "$vtls"
-  # The SDK's mbedTLS verifies signatures through PSA (MBEDTLS_USE_PSA_CRYPTO),
-  # which curl 7.88 never initializes: every handshake failed with
-  # MBEDTLS_ERR_PK_BAD_INPUT_DATA (PSA_ERROR_BAD_STATE).
-  grep -q 'psa_crypto_init' "$vtls" || perl -0pi -e 's{(static int mbedtls_init\(void\)\n\{\n)}{$1#ifdef MBEDTLS_USE_PSA_CRYPTO\n  if(psa_crypto_init() != PSA_SUCCESS)\n    return 0;\n#endif\n}; s{(#include <mbedtls/sha256.h>\n)}{$1#ifdef MBEDTLS_USE_PSA_CRYPTO\n#include <psa/crypto.h>\n#endif\n}' "$vtls"
-  grep -q 'psa_crypto_init' "$vtls"
-  # Every connection uses one parsed copy of the CA bundle (shims/mbedtls-fs.c)
-  # instead of parsing its own.
-  grep -q 'mbedtls_fs_shared_ca_chain' "$vtls" || perl -0pi -e 's{(  mbedtls_x509_crt_init\(&backend->cacert\);\n)}{$1  mbedtls_x509_crt *cachain = &backend->cacert;\n}; s{mbedtls_x509_crt_parse_file\(&backend->cacert, ssl_cafile\)}{mbedtls_fs_shared_ca_chain(ssl_cafile, &cachain)}; s{(mbedtls_ssl_conf_ca_chain\(&backend->config,\n\s*)&backend->cacert,}{$1cachain,}' "$vtls"
-  [ "$(grep -c 'cachain' "$vtls")" = 3 ]
-  # TLS 1.3, which the SDK's mbedTLS has (MBEDTLS_SSL_PROTO_TLS1_3) and curl
-  # 7.88 never asks mbedTLS for: the highest version becomes 1.3, and reads go
-  # on past the session tickets a TLS 1.3 server sends after the handshake.
-  grep -q 'MBEDTLS_SSL_MINOR_VERSION_4' "$vtls" || perl -0pi -e 's{(    case CURL_SSLVERSION_TLSv1_3:\n)(      break;\n)}{$1#ifdef MBEDTLS_SSL_PROTO_TLS1_3\n      *mbedver = MBEDTLS_SSL_MINOR_VERSION_4;\n      return CURLE_OK;\n#endif\n$2}g; s{(      ssl_version_max = CURL_SSLVERSION_MAX_TLSv1_)2;\n}{#ifdef MBEDTLS_SSL_PROTO_TLS1_3\n${1}3;\n#else\n${1}2;\n#endif\n}; s{(  ret = mbedtls_ssl_read\(&backend->ssl, \(unsigned char \*\)buf,\n\s*buffersize\);\n)}{  do {\n  $1  }\n#ifdef MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET\n  while(ret == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET);\n#else\n  while(0);\n#endif\n}' "$vtls"
-  [ "$(grep -c 'MBEDTLS_SSL_MINOR_VERSION_4' "$vtls")" = 2 ]
-  grep -q 'CURL_SSLVERSION_MAX_TLSv1_3;' "$vtls"
-  grep -q 'while(ret == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET)' "$vtls"
-  # file: URLs name drive letters (file:///C:/Data/page.html), as on Windows.
-  sed -i 's/^#if defined(WIN32) || defined(MSDOS) || defined(__EMX__)$/& || defined(__SYMBIAN32__)/' \
-    "$src/curl-7.88.1/lib/file.c"
-  sed -i 's/^#if !defined(MSDOS) \&\& !defined(WIN32) \&\& !defined(__CYGWIN__)$/& \&\& !defined(__SYMBIAN32__)/' \
-    "$src/curl-7.88.1/lib/urlapi.c"
+  "$REPO/scripts/patch-curl.sh" "$src/curl-7.88.1"
   # TLS from the SDK's mbedTLS 3.4. HTTP(S) and local files (WebKit's curl
   # backend loads file: URLs through curl too). Open C has no socketpair(),
   # and curl's stand-in (a TCP connection to itself over the loopback) fails
@@ -302,7 +276,7 @@ build_curl() {
   # u_short and AF_INET is 0x0800: curl's own addresses for numeric hosts
   # (http://127.0.0.1/) cast the family to sa_family_t, which made it 0.
   # HTTP/2 through nghttp2 (build_nghttp2), negotiated with ALPN.
-  cflags="$cflags $tls_flags -DCURL_SA_FAMILY_T=u_short -DNGHTTP2_STATICLIB" cmake_build curl-7.88.1 -DBUILD_CURL_EXE=OFF -DBUILD_TESTING=OFF \
+  cflags="$cflags $tls_flags -DCURL_SA_FAMILY_T=u_short -DNGHTTP2_STATICLIB -DSYMBIAN_MBEDTLS_FS" cmake_build curl-7.88.1 -DBUILD_CURL_EXE=OFF -DBUILD_TESTING=OFF \
     -DUSE_NGHTTP2=ON -DNGHTTP2_INCLUDE_DIR="$P/include" -DNGHTTP2_LIBRARY="$P/lib/libnghttp2.a" \
     -DCURL_DISABLE_DICT=ON -DCURL_DISABLE_FTP=ON -DCURL_DISABLE_GOPHER=ON \
     -DCURL_DISABLE_IMAP=ON -DCURL_DISABLE_LDAPS=ON -DCURL_DISABLE_MQTT=ON \

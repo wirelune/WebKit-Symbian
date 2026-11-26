@@ -7,7 +7,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0 OR GPL-2.0-or-later (as mbedTLS)
  */
+#ifndef _WIN32
 #include <dirent.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -89,6 +91,12 @@ int mbedtls_fs_shared_ca_chain(const char *path, mbedtls_x509_crt **chain)
  * could be read, as mbedTLS does. */
 int mbedtls_x509_crt_parse_path(mbedtls_x509_crt *chain, const char *path)
 {
+#ifdef _WIN32
+    /* The Windows test host reads only bundles (curl's CA path is unset). */
+    (void)chain;
+    (void)path;
+    return MBEDTLS_ERR_X509_FILE_IO_ERROR;
+#else
     DIR *directory = opendir(path);
     struct dirent *entry;
     int failed = 0;
@@ -106,6 +114,7 @@ int mbedtls_x509_crt_parse_path(mbedtls_x509_crt *chain, const char *path)
     }
     closedir(directory);
     return failed;
+#endif
 }
 
 int mbedtls_x509_crl_parse_file(mbedtls_x509_crl *chain, const char *path)

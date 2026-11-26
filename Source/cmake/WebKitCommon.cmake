@@ -40,6 +40,7 @@ if (NOT HAS_RUN_WEBKIT_COMMON)
         Mac
         PlayStation
         Symbian
+        SymbianHost
         WPE
         WinCairo
     )
