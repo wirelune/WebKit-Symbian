@@ -11,3 +11,6 @@ list(APPEND WebCore_LIBRARIES
     winmm
     ws2_32
 )
+
+# The name of its debug symbols (CMakeLists.txt), as PlatformWin.cmake has it.
+set(WebCore_OUTPUT_NAME WebCore${DEBUG_SUFFIX})
