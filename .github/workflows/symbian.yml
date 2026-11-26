@@ -232,3 +232,34 @@ jobs:
           gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1 \
             || gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes
           gh release upload "$GITHUB_REF_NAME" "$SYMBIAN_WEBKIT_WORK"/sis/*.sis --clobber
+
+  # The Windows test host (Tools/Symbian/host, docs/WindowsHost-design.md): the
+  # phone's engine on 32-bit Windows with Web Inspector, uploaded as "wkhost".
+  windows-host:
+    runs-on: windows-2022
+    timeout-minutes: 350
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            .github
+            Source/JavaScriptCore
+            Source/ThirdParty/ANGLE
+            Source/ThirdParty/capstone
+            Source/WTF
+            Source/WebCore
+            Source/WebInspectorUI
+            Source/WebKitLegacy
+            Source/bmalloc
+            Source/cmake
+            Tools/Scripts
+            Tools/Symbian
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x86
+      - name: Inventory
+        run: Tools/Symbian/host/ci-windows.ps1 -Step inventory
