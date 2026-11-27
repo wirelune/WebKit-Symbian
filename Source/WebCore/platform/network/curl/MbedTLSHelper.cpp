@@ -49,7 +49,12 @@ static Seconds toSeconds(const mbedtls_x509_time& time)
     components.tm_hour = time.hour;
     components.tm_min = time.min;
     components.tm_sec = time.sec;
+#if OS(WINDOWS)
+    // timegm() is POSIX; MSVC spells the same UTC conversion _mkgmtime().
+    return Seconds(static_cast<double>(_mkgmtime(&components)));
+#else
     return Seconds(static_cast<double>(timegm(&components)));
+#endif
 }
 
 static String commonName(const mbedtls_x509_name* name)
