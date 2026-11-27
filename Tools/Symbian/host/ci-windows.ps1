@@ -152,6 +152,23 @@ switch ($Step) {
         $pixel = $bitmap.GetPixel(350, 500)
         $bitmap.Dispose()
         if ($pixel.G -lt 200 -or $pixel.R -gt 50) { throw "the page did not paint: $pixel" }
+
+        # The window's own close path, which is what a user does and the one
+        # path that still crashes in WebKit's teardown
+        # (docs/WindowsHost-status.md). Running it here leaves crash.dmp for the
+        # artifacts, but only as a warning: the stand's answer is the screenshot
+        # above, not whether WebKit can be destroyed. log.txt is renamed to
+        # log.old.txt by the second run, so both stay.
+        $closing = Start-Process $exe.FullName -ArgumentList @($page, '--data', $data) -PassThru
+        Start-Sleep -Seconds 5
+        [void]$closing.CloseMainWindow()
+        if (-not $closing.WaitForExit(20000)) {
+            $closing.Kill()
+            Write-Warning 'the host did not exit when its window was closed'
+        } elseif ($closing.ExitCode -ne 0) {
+            Write-Warning "closing the window exited with $($closing.ExitCode); see crash.dmp"
+        } else
+            Write-Host 'closing the window exited with 0'
     }
     'package' {
         # What the user runs: wkhost.exe with the DLLs it needs beside it, the
