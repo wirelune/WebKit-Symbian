@@ -28,7 +28,10 @@
 
 #if USE(CURL)
 
-#if PLATFORM(WIN)
+// curl.h spells curl_socket_t with SOCKET, so on Windows the socket headers
+// have to come first. The Symbian port is built on Windows without being
+// PLATFORM(WIN), hence OS() here.
+#if OS(WINDOWS)
 #include <winsock2.h>
 #endif
 
