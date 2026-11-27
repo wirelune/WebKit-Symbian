@@ -61,11 +61,7 @@ void XSLTProcessor::genericErrorFunc(void*, const char*, ...)
     // It would be nice to do something with this error message.
 }
 
-#if LIBXML_VERSION >= 21200
 void XSLTProcessor::parseErrorFunc(void* userData, const xmlError* error)
-#else
-void XSLTProcessor::parseErrorFunc(void* userData, xmlError* error)
-#endif
 {
     PageConsoleClient* console = static_cast<PageConsoleClient*>(userData);
     if (!console)
@@ -134,7 +130,7 @@ static xmlDocPtr docLoaderFunc(const xmlChar* uri,
         Frame* frame = globalProcessor->xslStylesheet()->ownerDocument()->frame();
         if (frame && frame->page())
             console = &frame->page()->console();
-        xmlSetStructuredErrorFunc(console, XSLTProcessor::parseErrorFunc);
+        xmlSetStructuredErrorFunc(console, reinterpret_cast<xmlStructuredErrorFunc>(XSLTProcessor::parseErrorFunc));
         xmlSetGenericErrorFunc(console, XSLTProcessor::genericErrorFunc);
 
         // We don't specify an encoding here. Neither Gecko nor WinIE respects

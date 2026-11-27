@@ -139,7 +139,8 @@ bool XSLStyleSheet::parseString(const String& string)
     if (frame && frame->page())
         console = &frame->page()->console();
 
-    XMLDocumentParserScope scope(cachedResourceLoader(), XSLTProcessor::genericErrorFunc, XSLTProcessor::parseErrorFunc, console);
+    XMLDocumentParserScope scope(cachedResourceLoader(), XSLTProcessor::genericErrorFunc,
+        reinterpret_cast<xmlStructuredErrorFunc>(XSLTProcessor::parseErrorFunc), console);
 
     auto upconvertedCharacters = StringView(string).upconvertedCharacters();
     const char* buffer = reinterpret_cast<const char*>(upconvertedCharacters.get());

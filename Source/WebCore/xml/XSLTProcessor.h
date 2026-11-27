@@ -62,11 +62,12 @@ public:
 
     void reset();
 
-#if LIBXML_VERSION >= 21200
+    // libxml2 2.12 made the structured error handler take a const xmlError,
+    // but a build can end up with headers whose typedef disagrees with the
+    // LIBXML_VERSION it reports (the Symbian port's 2.9.12 did), so the
+    // callback below always takes the const form and the call sites cast it
+    // to xmlStructuredErrorFunc. It only ever reads the error.
     static void parseErrorFunc(void* userData, const xmlError*);
-#else
-    static void parseErrorFunc(void* userData, xmlError*);
-#endif
     static void genericErrorFunc(void* userData, const char* msg, ...);
     
     // Only for libXSLT callbacks
