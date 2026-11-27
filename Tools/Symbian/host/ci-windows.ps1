@@ -170,8 +170,9 @@ switch ($Step) {
             Write-Warning 'the host did not exit when its window was closed'
         } elseif ($closing.ExitCode -ne 0) {
             Write-Warning "closing the window exited with $($closing.ExitCode); see crash.dmp"
-        } else
+        } else {
             Write-Host 'closing the window exited with 0'
+        }
     }
     'package' {
         # What the user runs: wkhost.exe with the DLLs it needs beside it, the
