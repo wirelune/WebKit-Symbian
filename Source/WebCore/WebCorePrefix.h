@@ -167,12 +167,16 @@
 #ifdef __cplusplus
 
 #if !PLATFORM(WIN)
-#import <wtf/FastMalloc.h>
-#import <wtf/HashMap.h>
-#import <wtf/Optional.h>
-#import <wtf/StdLibExtras.h>
-#import <wtf/text/AtomString.h>
-#import <wtf/text/WTFString.h>
+// #include, not #import: MSVC reads #import as a COM type-library import and
+// fails with C1083 on the WTF headers, which the Symbian port's Windows test
+// host compiles here because it is not PLATFORM(WIN). GCC and clang treat
+// #import as #include for these headers anyway, so the phone is unaffected.
+#include <wtf/FastMalloc.h>
+#include <wtf/HashMap.h>
+#include <wtf/Optional.h>
+#include <wtf/StdLibExtras.h>
+#include <wtf/text/AtomString.h>
+#include <wtf/text/WTFString.h>
 #endif
 
 #define new ("if you use new/delete make sure to include config.h at the top of the file"()) 
