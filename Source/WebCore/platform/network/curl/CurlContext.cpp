@@ -46,12 +46,6 @@
 #include <wtf/WallTime.h>
 #endif
 
-#if OS(WINDOWS)
-#include "WebCoreBundleWin.h"
-#include <shlobj.h>
-#include <shlwapi.h>
-#endif
-
 namespace WebCore {
 
 class EnvironmentVariableReader {
