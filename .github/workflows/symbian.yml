@@ -322,3 +322,10 @@ jobs:
       - name: Smoke test
         timeout-minutes: 5
         run: Tools/Symbian/host/ci-windows.ps1 -Step smoke
+      - name: Package
+        run: Tools/Symbian/host/ci-windows.ps1 -Step package
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wkhost
+          path: WebKitBuild/SymbianHost/dist/wkhost.zip
+          if-no-files-found: error

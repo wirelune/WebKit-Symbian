@@ -18,6 +18,11 @@ C:\Data\WebKitQt does on the phone.
   curl-verbose    while it exists, curl's trace goes to curl.txt
 
 Usage: wkhost.exe [URL] [--data DIR]
+       wkhost.exe [URL] [--data DIR] --shot FILE.bmp [--wait SECONDS]
+
+--shot loads the page, waits (10 seconds unless --wait says otherwise), writes
+the view to the BMP file and exits with 0 when it did: this is what the CI's
+smoke test runs.
 
 The mouse acts as a finger: press, drag and release. The wheel scrolls.
 Type an address in the field at the top and press Enter.

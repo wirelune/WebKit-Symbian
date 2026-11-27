@@ -129,5 +129,30 @@ switch ($Step) {
         $bitmap.Dispose()
         if ($pixel.G -lt 200 -or $pixel.R -gt 50) { throw "the page did not paint: $pixel" }
     }
+    'package' {
+        # What the user runs: wkhost.exe with the DLLs it needs beside it, the
+        # phone's CA bundle, and README.txt about copying the fonts.
+        $exe = Get-ChildItem "$Work\build" -Recurse -Filter wkhost.exe | Select-Object -First 1
+        if (-not $exe) { throw 'wkhost.exe was not built' }
+        $dist = "$Work\dist\wkhost"
+        Remove-Item $dist -Recurse -Force -ErrorAction SilentlyContinue
+        New-Item -ItemType Directory -Force $dist | Out-Null
+        Copy-Item $exe.FullName $dist
+        # vcpkg builds the triplet's libraries as DLLs; they are all next to each
+        # other, and Windows finds them beside the executable.
+        Get-ChildItem "$Vcpkg\bin\*.dll" | Copy-Item -Destination $dist
+        if (Test-Path "$Net\bin") { Get-ChildItem "$Net\bin\*.dll" | Copy-Item -Destination $dist }
+        # ICU, if this build keeps its data in a file; the library packaging in
+        # the DLL needs nothing here.
+        Get-ChildItem "$Vcpkg\bin" -Filter 'icudt*.dat' -ErrorAction SilentlyContinue |
+            Select-Object -First 1 | Copy-Item -Destination $dist
+        Copy-Item "$Work\cacert.pem" $dist
+        Copy-Item "$PSScriptRoot\README.txt" $dist
+        $zip = "$Work\dist\wkhost.zip"
+        Remove-Item $zip -Force -ErrorAction SilentlyContinue
+        Compress-Archive -Path "$dist\*" -DestinationPath $zip -Force
+        Write-Host "packaged $((Get-ChildItem $dist | Measure-Object).Count) files"
+        Write-Host "zip: $((Get-Item $zip).Length) bytes"
+    }
     default { throw "unknown step $Step" }
 }
