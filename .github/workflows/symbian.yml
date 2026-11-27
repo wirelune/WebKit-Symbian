@@ -325,6 +325,17 @@ jobs:
       - name: Smoke test
         timeout-minutes: 5
         run: Tools/Symbian/host/ci-windows.ps1 -Step smoke
+      # What the smoke test left behind when wkhost crashed: the minidump, the
+      # log, and the map file that names the addresses in the dump.
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: host-crash
+          path: |
+            WebKitBuild/SymbianHost/smoke-data/crash.dmp
+            WebKitBuild/SymbianHost/smoke-data/log.txt
+            WebKitBuild/SymbianHost/build/bin32/wkhost.map
+          if-no-files-found: ignore
       - name: Package
         run: Tools/Symbian/host/ci-windows.ps1 -Step package
       - uses: actions/upload-artifact@v4

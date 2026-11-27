@@ -140,6 +140,7 @@ switch ($Step) {
         $process = Start-Process $exe.FullName -ArgumentList @($page, '--data', $data, '--shot', "$Work\smoke.bmp", '--wait', '20') -PassThru -Wait
         $log = Get-Content "$data\log.txt" -Raw
         $log
+        if (Test-Path "$data\crash.dmp") { Write-Host "crash dump: $data\crash.dmp" }
         if ($process.ExitCode -ne 0) { throw "wkhost exited with $($process.ExitCode)" }
         if ($log -notmatch 'console: .*smoke: localStorage v') { throw 'no localStorage' }
         if ($log -notmatch 'smoke: .*languages en-GB,en-US') { throw 'not the phone languages' }

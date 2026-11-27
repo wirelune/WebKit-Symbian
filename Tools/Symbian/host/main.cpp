@@ -30,6 +30,7 @@
 // --shot loads the page, waits (10 seconds by default), saves the view and
 // exits: the CI's smoke test.
 
+#include "HostCrash.h"
 #include "HostLog.h"
 #include "HostSettings.h"
 #include "HostWindow.h"
@@ -125,6 +126,7 @@ int wmain(int argc, wchar_t** argv)
     }
 
     HostLogOpen(data.c_str());
+    HostInstallCrashHandler(data.c_str());
     HostLog("WebKit engine starting");
     WebView::initializeProcess(data.c_str());
     HostSettings settings = HostReadSettings(data);
@@ -158,7 +160,12 @@ int wmain(int argc, wchar_t** argv)
             runEngine();
             bool saved = window.saveBitmap(shot.c_str());
             HostLog("screenshot %s, exiting", saved ? "saved" : "failed");
-            return saved ? 0 : 1;
+            // --shot is the CI's smoke test: the image is written and the exit
+            // status is its answer, so the process ends here instead of
+            // unwinding WebKit. Unwinding reaches a teardown path that the
+            // phone's browser never runs and that still crashes in the port;
+            // a crash there leaves crash.dmp behind (HostCrash.cpp).
+            ExitProcess(saved ? 0 : 1);
         }
         while (PeekMessageW(&message, nullptr, 0, 0, PM_REMOVE)) {
             if (message.message == WM_QUIT)
