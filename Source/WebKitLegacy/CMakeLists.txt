@@ -39,8 +39,14 @@ WEBKIT_FRAMEWORK_DECLARE(WebKitLegacy)
 WEBKIT_INCLUDE_CONFIG_FILES_IF_EXISTS()
 
 if (MSVC)
-    WEBKIT_ADD_PRECOMPILED_HEADER("WebKitPrefix.h" "win/WebKitPrefix.cpp" WebKitLegacy_SOURCES)
-    list(APPEND WebKitLegacy_SOURCES win/WebKit.resources/WebKit.rc)
+    # The Windows port's prefix header and version resource. A Symbian port
+    # built on Windows takes neither: it has its own prefix header
+    # (PlatformSymbian.cmake), and both of these files need the WinCairo port's
+    # WebKit.h and its generated autoversion.h.
+    if (NOT PORT MATCHES "^Symbian")
+        WEBKIT_ADD_PRECOMPILED_HEADER("WebKitPrefix.h" "win/WebKitPrefix.cpp" WebKitLegacy_SOURCES)
+        list(APPEND WebKitLegacy_SOURCES win/WebKit.resources/WebKit.rc)
+    endif ()
     add_definitions(/DWEBKIT_EXPORTS /DFRAMEWORK_NAME=WebKitLegacy)
 endif ()
 
@@ -54,7 +60,10 @@ if (APPLE)
     set_target_properties(WebKitLegacy PROPERTIES LINK_FLAGS "-umbrella WebKit")
 endif ()
 
-if (MSVC)
+# A Symbian port has no WEBKIT_LIBRARIES_DIR (its libraries come from the SDK
+# and from Tools/Symbian), and a static library carries no Windows version
+# resource to stamp.
+if (MSVC AND NOT PORT MATCHES "^Symbian")
     add_custom_command(
         TARGET WebKitLegacy
         POST_BUILD
