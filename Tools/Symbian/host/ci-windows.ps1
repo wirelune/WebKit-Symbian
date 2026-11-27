@@ -194,6 +194,24 @@ switch ($Step) {
         Compress-Archive -Path "$dist\*" -DestinationPath $zip -Force
         Write-Host "packaged $((Get-ChildItem $dist | Measure-Object).Count) files"
         Write-Host "zip: $((Get-Item $zip).Length) bytes"
+
+        # The archive has to work on its own: unpack it somewhere else and run
+        # that copy with a PATH of nothing but the system directories, so a DLL
+        # that was left out shows up here rather than on the user's machine.
+        $check = "$Work\dist\check"
+        Remove-Item $check -Recurse -Force -ErrorAction SilentlyContinue
+        Expand-Archive $zip -DestinationPath $check -Force
+        New-Item -ItemType Directory -Force "$check\fonts" | Out-Null
+        Copy-Item "$env:SystemRoot\Fonts\arial.ttf", "$env:SystemRoot\Fonts\arialbd.ttf" "$check\fonts"
+        $env:PATH = "$env:SystemRoot\system32;$env:SystemRoot"
+        $page = 'file:///' + ("$PSScriptRoot\tests\smoke.html" -replace '\\', '/')
+        $packaged = Start-Process "$check\wkhost.exe" -ArgumentList @($page, '--data', "$check\data",
+            '--shot', "$check\check.bmp", '--wait', '10') -PassThru -Wait
+        $log = Get-Content "$check\data\log.txt" -Raw
+        if ($packaged.ExitCode -ne 0) { throw "the packaged wkhost exited with $($packaged.ExitCode)" }
+        if ($log -notmatch 'fonts: 2') { throw 'the packaged wkhost did not read its fonts' }
+        if ($log -notmatch 'smoke: languages en-GB,en-US') { throw 'the packaged wkhost did not run the page' }
+        Write-Host 'the packaged copy runs'
     }
     default { throw "unknown step $Step" }
 }
