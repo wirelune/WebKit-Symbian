@@ -214,8 +214,10 @@ switch ($Step) {
         $check = "$Work\dist\check"
         Remove-Item $check -Recurse -Force -ErrorAction SilentlyContinue
         Expand-Archive $zip -DestinationPath $check -Force
-        New-Item -ItemType Directory -Force "$check\fonts" | Out-Null
-        Copy-Item "$env:SystemRoot\Fonts\arial.ttf", "$env:SystemRoot\Fonts\arialbd.ttf" "$check\fonts"
+        # The fonts belong to the data directory, as on the phone
+        # (C:\Data\WebKitQt\fonts), not next to the executable.
+        New-Item -ItemType Directory -Force "$check\data\fonts" | Out-Null
+        Copy-Item "$env:SystemRoot\Fonts\arial.ttf", "$env:SystemRoot\Fonts\arialbd.ttf" "$check\data\fonts"
         $env:PATH = "$env:SystemRoot\system32;$env:SystemRoot"
         $page = 'file:///' + ("$PSScriptRoot\tests\smoke.html" -replace '\\', '/')
         # Not -Wait: a missing DLL makes Windows put up a message box, which

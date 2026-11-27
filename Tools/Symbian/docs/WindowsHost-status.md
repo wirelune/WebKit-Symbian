@@ -34,10 +34,12 @@ Job `windows-host` в Actions собирает стенд целиком: кон
 
 1. Взять артефакт `wkhost` из последнего зелёного рана job'а `windows-host`
    (Actions → Symbian → artifacts).
-2. Распаковать. Рядом с `wkhost.exe` лежат нужные DLL, `cacert.pem` и `README.txt`.
+2. Распаковать. Рядом с `wkhost.exe` лежат нужные DLL (включая `libEGL.dll` и
+   `libGLESv2.dll` от ANGLE), `cacert.pem` и `README.txt`.
 3. Скопировать шрифты телефона — всё содержимое `Z:\resource\fonts` (на N8 их 20) —
-   в папку `fonts\` рядом с `wkhost.exe`. Стенд видит **только** их; без шрифтов
-   страницы будут пустыми.
+   в **каталог данных**, как на телефоне (`C:\Data\WebKitQt\fonts`), то есть в
+   `%LOCALAPPDATA%\WebKitQt\fonts` (или в `<--data DIR>\fonts`). Стенд видит
+   **только** их; без шрифтов текст на страницах не отрисуется.
 4. Запустить: `wkhost.exe https://duckduckgo.com/lite/`.
    Данные (`log.txt`, `log.old.txt`, `cookies.db`, `LocalStorage`, `crash.dmp`,
    `curl.txt` при файле `curl-verbose`) лежат в `%LOCALAPPDATA%\WebKitQt` или в

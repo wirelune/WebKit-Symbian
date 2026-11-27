@@ -9,13 +9,20 @@ WebGL goes through ANGLE instead of the phone's Broadcom driver.
 
 Data directory: %LOCALAPPDATA%\WebKitQt (or --data DIR). It holds log.txt,
 log.old.txt, cookies.db, LocalStorage and the files below, as
-C:\Data\WebKitQt does on the phone.
+C:\Data\WebKitQt does on the phone. Create it before the first run and put the
+phone's fonts in it:
 
-  fonts\          copy the phone's fonts here: everything in Z:\resource\fonts
-                  (20 files on the N8). The host sees no other fonts.
+  %LOCALAPPDATA%\WebKitQt\fonts\   everything in Z:\resource\fonts (20 files on
+                                   the N8). The host sees no other fonts, so
+                                   without them pages come out blank.
+
+The files below also live in that directory:
+
+  fonts\          the phone's fonts, as above
   useragent.txt   first line replaces the User-Agent string
   language.txt    first line is the preferred language (en-GB by default)
   curl-verbose    while it exists, curl's trace goes to curl.txt
+  crash.dmp       written if the host crashes, for a debugger
 
 Usage: wkhost.exe [URL] [--data DIR]
        wkhost.exe [URL] [--data DIR] --shot FILE.bmp [--wait SECONDS]
