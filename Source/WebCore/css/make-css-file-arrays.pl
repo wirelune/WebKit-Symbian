@@ -53,6 +53,10 @@ for my $in (@ARGV) {
     require preprocessor;
     $text = join('', applyPreprocessor($in, $defines, $preprocessor));
 
+    # A preprocessor that could not be started prints nothing, and the zero-length
+    # array that follows only shows up much later as a confusing compile error.
+    die "$in: the preprocessor produced nothing ($preprocessor)\n" unless length $text;
+
     # Remove comments in a simple-minded way that will work fine for our files.
     # Could do this a fancier way if we were worried about arbitrary CSS source.
     $text =~ s|/\*.*?\*/||gs;

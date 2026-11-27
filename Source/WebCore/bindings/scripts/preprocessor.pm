@@ -91,10 +91,14 @@ sub applyPreprocessor
             }
         };
     } elsif ($Config::Config{"osname"} eq "MSWin32") {
+        # $preprocessor is one string with its flags ("cl.exe" /nologo /EP /TP),
+        # and open3 takes the first argument as the program name, so it has to be
+        # split into words first, as the cygwin branch below does.
+        my @preprocessorAndFlags = shellwords($preprocessor);
         # Suppress STDERR so that if we're using cl.exe, the output
         # name isn't needlessly echoed.
         use Symbol 'gensym'; my $err = gensym;
-        $pid = open3(\*PP_IN, \*PP_OUT, $err, $preprocessor, @args, @macros, $fileName);
+        $pid = open3(\*PP_IN, \*PP_OUT, $err, @preprocessorAndFlags, @args, @macros, $fileName);
     } else {
         $pid = open2(\*PP_OUT, \*PP_IN, shellwords($preprocessor), @args, @macros, $fileName);
     }
