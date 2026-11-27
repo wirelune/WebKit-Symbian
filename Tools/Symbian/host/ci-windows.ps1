@@ -191,8 +191,10 @@ switch ($Step) {
         New-Item -ItemType Directory -Force $dist | Out-Null
         Copy-Item $exe.FullName $dist
         # vcpkg builds the triplet's libraries as DLLs; they are all next to each
-        # other, and Windows finds them beside the executable.
+        # other, and Windows finds them beside the executable. ANGLE is a DLL
+        # too (libEGL, libGLESv2), built in the tree beside wkhost.exe.
         Get-ChildItem "$Vcpkg\bin\*.dll" | Copy-Item -Destination $dist
+        Get-ChildItem $exe.DirectoryName -Filter '*.dll' | Copy-Item -Destination $dist
         if (Test-Path "$Net\bin") { Get-ChildItem "$Net\bin\*.dll" | Copy-Item -Destination $dist }
         # ICU, if this build keeps its data in a file; the library packaging in
         # the DLL needs nothing here.
@@ -216,8 +218,14 @@ switch ($Step) {
         Copy-Item "$env:SystemRoot\Fonts\arial.ttf", "$env:SystemRoot\Fonts\arialbd.ttf" "$check\fonts"
         $env:PATH = "$env:SystemRoot\system32;$env:SystemRoot"
         $page = 'file:///' + ("$PSScriptRoot\tests\smoke.html" -replace '\\', '/')
+        # Not -Wait: a missing DLL makes Windows put up a message box, which
+        # would hold the job until its timeout instead of failing here.
         $packaged = Start-Process "$check\wkhost.exe" -ArgumentList @($page, '--data', "$check\data",
-            '--shot', "$check\check.bmp", '--wait', '10') -PassThru -Wait
+            '--shot', "$check\check.bmp", '--wait', '10') -PassThru
+        if (-not $packaged.WaitForExit(120000)) {
+            $packaged.Kill()
+            throw 'the packaged wkhost did not exit within two minutes'
+        }
         $log = Get-Content "$check\data\log.txt" -Raw
         if ($packaged.ExitCode -ne 0) { throw "the packaged wkhost exited with $($packaged.ExitCode)" }
         if ($log -notmatch 'fonts: 2') { throw 'the packaged wkhost did not read its fonts' }

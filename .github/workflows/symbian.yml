@@ -340,6 +340,7 @@ jobs:
             WebKitBuild/SymbianHost/smoke-data/log.old.txt
           if-no-files-found: ignore
       - name: Package
+        timeout-minutes: 10
         run: Tools/Symbian/host/ci-windows.ps1 -Step package
       - uses: actions/upload-artifact@v4
         with:
