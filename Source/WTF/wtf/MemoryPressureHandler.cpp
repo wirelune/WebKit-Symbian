@@ -59,7 +59,7 @@ MemoryPressureHandler& MemoryPressureHandler::singleton()
 MemoryPressureHandler::MemoryPressureHandler()
 #if OS(LINUX) || OS(FREEBSD)
     : m_holdOffTimer(RunLoop::main(), this, &MemoryPressureHandler::holdOffTimerFired)
-#elif OS(WINDOWS)
+#elif OS(WINDOWS) && !PLATFORM(SYMBIAN)
     : m_windowsMeasurementTimer(RunLoop::main(), this, &MemoryPressureHandler::windowsMeasurementTimerFired)
 #endif
 {
@@ -311,7 +311,7 @@ void MemoryPressureHandler::ReliefLogger::logMemoryUsageChange()
         m_initialMemory->physical, currentMemory->physical, physicalDiff);
 }
 
-#if !OS(WINDOWS)
+#if !OS(WINDOWS) || PLATFORM(SYMBIAN)
 void MemoryPressureHandler::platformInitialize() { }
 #endif
 

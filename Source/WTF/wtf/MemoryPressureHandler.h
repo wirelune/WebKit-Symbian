@@ -194,7 +194,10 @@ private:
     WTF::Function<void()> m_didExceedInactiveLimitWhileActiveCallback;
     LowMemoryHandler m_lowMemoryHandler;
 
-#if OS(WINDOWS)
+// The Symbian port uses the generic handler on every platform it is built for
+// (generic/MemoryPressureHandlerGeneric.cpp), as on the phone, so the Windows
+// measurement timer is only for the Windows port.
+#if OS(WINDOWS) && !PLATFORM(SYMBIAN)
     void windowsMeasurementTimerFired();
     RunLoop::Timer<MemoryPressureHandler> m_windowsMeasurementTimer;
     Win32Handle m_lowMemoryHandle;

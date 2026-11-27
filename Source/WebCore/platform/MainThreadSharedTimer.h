@@ -29,7 +29,7 @@
 #include "SharedTimer.h"
 #include <wtf/Forward.h>
 
-#if !USE(CF) && !OS(WINDOWS)
+#if !USE(CF) && (!OS(WINDOWS) || PLATFORM(SYMBIAN))
 #include <wtf/RunLoop.h>
 #endif
 
@@ -56,7 +56,7 @@ private:
     MainThreadSharedTimer();
 
     WTF::Function<void()> m_firedFunction;
-#if !USE(CF) && !OS(WINDOWS)
+#if !USE(CF) && (!OS(WINDOWS) || PLATFORM(SYMBIAN))
     RunLoop::Timer<MainThreadSharedTimer> m_timer;
 #endif
 };

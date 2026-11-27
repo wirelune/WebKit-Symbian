@@ -43,7 +43,11 @@ MainThreadSharedTimer& MainThreadSharedTimer::singleton()
     return instance;
 }
 
-#if USE(CF) || OS(WINDOWS)
+// The Symbian port keeps its shared timer on the port's own run loop on every
+// platform it is built for, as on the phone: PLATFORM(SYMBIAN) takes the
+// generic branch below even when the build host is Windows, where the code
+// would otherwise expect platform/win/MainThreadSharedTimerWin.cpp.
+#if USE(CF) || (OS(WINDOWS) && !PLATFORM(SYMBIAN))
 MainThreadSharedTimer::MainThreadSharedTimer() = default;
 #else
 MainThreadSharedTimer::MainThreadSharedTimer()
