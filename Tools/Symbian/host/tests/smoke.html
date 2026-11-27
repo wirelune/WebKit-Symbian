@@ -19,6 +19,10 @@ results.push("webgl " + (gl ? gl.getParameter(gl.VERSION) : "none"));
 results.push("ua " + navigator.userAgent);
 results.push("languages " + navigator.languages.join(","));
 results.push("screen " + screen.width + "x" + screen.height);
-console.log("smoke: " + results.join(" | "));
+// One console message per result: WTF formats a console message into a
+// 256-byte buffer, so one long line would be cut off before the checks in
+// ci-windows.ps1 could read it. The phone's engine truncates it the same way.
+for (const line of results)
+    console.log("smoke: " + line);
 document.getElementById("out").textContent = results.join("\n");
 </script>
