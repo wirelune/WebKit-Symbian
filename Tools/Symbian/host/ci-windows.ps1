@@ -85,6 +85,33 @@ switch ($Step) {
             "-DBISON_EXECUTABLE=$($msys -replace '\\', '/')/bison.exe",
             "-DCMAKE_PREFIX_PATH=$Net;$Vcpkg", '-DDEVELOPER_MODE=OFF')
     }
+    'generators' {
+        # WebCore's style sheets come from make-css-file-arrays.pl, which runs an
+        # external preprocessor over the CSS files. It is the one generated file
+        # that depends on the host tools, and when the preprocessor prints
+        # nothing the arrays come out zero length: the build then fails much
+        # later, with C2466 in five unified sources. Check it right after
+        # configure instead, and say what happened.
+        $header = "$Work\build\DerivedSources\WebCore\UserAgentStyleSheets.h"
+        Invoke-Native 'ninja' @('-C', "$Work\build", 'DerivedSources/WebCore/UserAgentStyleSheets.h')
+        Get-Content $header -TotalCount 6
+
+        $perl = (Select-String -Path "$Work\build\CMakeCache.txt" -Pattern '^PERL_EXECUTABLE:').Line -replace '^[^=]*=', ''
+        Write-Host "perl: $perl"
+        # The command CMake gives the generator: the preprocessor string the
+        # script receives, with the defines after it.
+        $rule = (Select-String -Path "$Work\build\build.ninja" -Pattern 'make-css-file-arrays.pl' |
+            Select-Object -First 1).Line
+        if ($rule) { Write-Host $rule.Substring(0, [Math]::Min(320, $rule.Length)) }
+        $css = "$Repo\Source\WebCore\css\dialog.css"
+        Write-Host "cl /EP /TP on dialog.css ($((Get-Item $css).Length) bytes):"
+        $clOutput = & cl /nologo /EP /TP '-DENABLE_XSLT=1' $css 2>&1
+        Write-Host ("  {0} lines, first: {1}" -f @($clOutput).Count, (@($clOutput) | Select-Object -First 1))
+
+        if ((Get-Content $header -Raw) -match '\[0\]') {
+            throw 'the generated style sheets are empty: the preprocessor printed nothing'
+        }
+    }
     'build-jsc' {
         # -k 0: every error in one run, as a CI round trip is long.
         Invoke-Native 'cmake' @('--build', "$Work\build", '--target', 'jsc', '--', '-k', '0')

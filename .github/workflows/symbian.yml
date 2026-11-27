@@ -312,6 +312,9 @@ jobs:
         run: Tools/Symbian/host/ci-windows.ps1 -Step test-net
       - name: Configure
         run: Tools/Symbian/host/ci-windows.ps1 -Step configure
+      - name: Generated style sheets
+        timeout-minutes: 5
+        run: Tools/Symbian/host/ci-windows.ps1 -Step generators
       - name: Build JSC
         run: Tools/Symbian/host/ci-windows.ps1 -Step build-jsc
       - name: Test JSC
