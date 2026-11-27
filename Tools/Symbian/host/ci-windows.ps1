@@ -143,7 +143,10 @@ switch ($Step) {
         if (Test-Path "$data\crash.dmp") { Write-Host "crash dump: $data\crash.dmp" }
         if ($process.ExitCode -ne 0) { throw "wkhost exited with $($process.ExitCode)" }
         if ($log -notmatch 'console: .*smoke: localStorage v') { throw 'no localStorage' }
-        if ($log -notmatch 'smoke: .*languages en-GB,en-US') { throw 'not the phone languages' }
+        # WebKit's NavigatorBase::languages() reports only the primary language
+        # "for privacy reasons", so that is what the phone says too; the second
+        # language still reaches servers through Accept-Language.
+        if ($log -notmatch 'smoke: languages en-GB') { throw 'not the phone language' }
         if ($log -notmatch 'smoke: .*screen 360x640') { throw 'not the phone screen' }
         if ($log -notmatch 'fonts: 2') { throw 'the host must see the fonts in its data directory and no others' }
         if ($log -notmatch 'smoke: .*webgl WebGL 1\.0') { Write-Warning 'no WebGL yet' }
@@ -210,7 +213,7 @@ switch ($Step) {
         $log = Get-Content "$check\data\log.txt" -Raw
         if ($packaged.ExitCode -ne 0) { throw "the packaged wkhost exited with $($packaged.ExitCode)" }
         if ($log -notmatch 'fonts: 2') { throw 'the packaged wkhost did not read its fonts' }
-        if ($log -notmatch 'smoke: languages en-GB,en-US') { throw 'the packaged wkhost did not run the page' }
+        if ($log -notmatch 'smoke: languages en-GB') { throw 'the packaged wkhost did not run the page' }
         Write-Host 'the packaged copy runs'
     }
     default { throw "unknown step $Step" }
