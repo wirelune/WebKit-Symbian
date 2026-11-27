@@ -73,44 +73,40 @@ switch ($Step) {
     }
     'configure' {
         # gperf and bison from the runner's MSYS2, by path: its usr\bin on PATH
-        # would put its link.exe before MSVC's.
-        $msys = 'C:\msys64\usr\bin'
+        # would put its link.exe before MSVC's. A machine that keeps MSYS2
+        # elsewhere sets HOST_MSYS, and HOST_PERL for a native Windows Perl
+        # (Cygwin and MSYS Perls report a different osname to the generators).
+        $msys = if ($env:HOST_MSYS) { $env:HOST_MSYS } else { 'C:\msys64\usr\bin' }
         if (-not (Test-Path "$msys\gperf.exe") -or -not (Test-Path "$msys\bison.exe")) {
             Invoke-Native "$msys\pacman.exe" @('-Sy', '--noconfirm', '--needed', 'gperf', 'bison')
         }
-        Invoke-Native 'cmake' @('-S', $Repo, '-B', "$Work\build", '-G', 'Ninja',
+        $perl = if ($env:HOST_PERL) { @("-DPERL_EXECUTABLE=$($env:HOST_PERL -replace '\\', '/')") } else { @() }
+        Invoke-Native 'cmake' (@('-S', $Repo, '-B', "$Work\build", '-G', 'Ninja',
             '-DPORT=SymbianHost', '-DCMAKE_BUILD_TYPE=RelWithDebInfo',
             '-DCMAKE_C_COMPILER=cl', '-DCMAKE_CXX_COMPILER=cl',
             "-DGPERF_EXECUTABLE=$($msys -replace '\\', '/')/gperf.exe",
-            "-DBISON_EXECUTABLE=$($msys -replace '\\', '/')/bison.exe",
-            "-DCMAKE_PREFIX_PATH=$Net;$Vcpkg", '-DDEVELOPER_MODE=OFF')
+            "-DBISON_EXECUTABLE=$($msys -replace '\\', '/')/bison.exe") + $perl + @(
+            "-DCMAKE_PREFIX_PATH=$Net;$Vcpkg", '-DDEVELOPER_MODE=OFF'))
     }
     'generators' {
-        # WebCore's style sheets come from make-css-file-arrays.pl, which runs an
-        # external preprocessor over the CSS files. It is the one generated file
-        # that depends on the host tools, and when the preprocessor prints
-        # nothing the arrays come out zero length: the build then fails much
-        # later, with C2466 in five unified sources. Check it right after
-        # configure instead, and say what happened.
-        $header = "$Work\build\DerivedSources\WebCore\UserAgentStyleSheets.h"
-        Invoke-Native 'ninja' @('-C', "$Work\build", 'DerivedSources/WebCore/UserAgentStyleSheets.h')
-        Get-Content $header -TotalCount 6
-
+        # make-css-file-arrays.pl evaluates the sheets' directives itself, so it
+        # can be checked in a second: run it on real CSS files with the build's
+        # own Perl and look at the arrays it wrote. Without this, a generator
+        # that writes zero-length arrays shows up as C2466 in five unified
+        # sources twenty minutes into the build, with nothing about the cause.
         $perl = (Select-String -Path "$Work\build\CMakeCache.txt" -Pattern '^PERL_EXECUTABLE:').Line -replace '^[^=]*=', ''
-        Write-Host "perl: $perl"
-        # The command CMake gives the generator: the preprocessor string the
-        # script receives, with the defines after it.
-        $rule = (Select-String -Path "$Work\build\build.ninja" -Pattern 'make-css-file-arrays.pl' |
-            Select-Object -First 1).Line
-        if ($rule) { Write-Host $rule.Substring(0, [Math]::Min(320, $rule.Length)) }
-        $css = "$Repo\Source\WebCore\css\dialog.css"
-        Write-Host "cl /EP /TP on dialog.css ($((Get-Item $css).Length) bytes):"
-        $clOutput = & cl /nologo /EP /TP '-DENABLE_XSLT=1' $css 2>&1
-        Write-Host ("  {0} lines, first: {1}" -f @($clOutput).Count, (@($clOutput) | Select-Object -First 1))
-
-        if ((Get-Content $header -Raw) -match '\[0\]') {
-            throw 'the generated style sheets are empty: the preprocessor printed nothing'
-        }
+        $header = "$env:TEMP\UserAgentStyleSheets.h"
+        $source = "$env:TEMP\UserAgentStyleSheets.cpp"
+        Invoke-Native $perl @("$Repo\Source\WebCore\css\make-css-file-arrays.pl",
+            '--defines', 'ENABLE_FULLSCREEN_API=1 ENABLE_MATHML=1 ENABLE_VIDEO=1 HAVE_OS_DARK_MODE_SUPPORT=0',
+            $header, $source,
+            "$Repo\Source\WebCore\css\dialog.css", "$Repo\Source\WebCore\css\fullscreen.css",
+            "$Repo\Source\WebCore\css\mathml.css")
+        Get-Content $header
+        if ((Get-Content $header -Raw) -match '\[0\]') { throw 'the generator wrote a zero-length array' }
+        $bytes = (Get-Item $source).Length
+        Write-Host "the generator wrote $bytes bytes of arrays"
+        if ($bytes -lt 1000) { throw "the generated arrays are only $bytes bytes" }
     }
     'build-jsc' {
         # -k 0: every error in one run, as a CI round trip is long.
