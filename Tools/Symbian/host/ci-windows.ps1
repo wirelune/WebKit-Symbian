@@ -173,6 +173,13 @@ switch ($Step) {
         } else {
             Write-Host 'closing the window exited with 0'
         }
+        # A dump is only useful with the map that names its addresses, and the
+        # map is large: copy it next to the dump only when there is one, so the
+        # artifact stays tiny on a clean run.
+        if (Test-Path "$data\crash.dmp") {
+            Copy-Item "$Work\build\bin32\wkhost.map" "$data\wkhost.map" -Force
+            Write-Host "closing the window left $data\crash.dmp"
+        }
     }
     'package' {
         # What the user runs: wkhost.exe with the DLLs it needs beside it, the
