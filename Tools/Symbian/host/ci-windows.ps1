@@ -234,5 +234,54 @@ switch ($Step) {
         if ($log -notmatch 'smoke: languages en-GB') { throw 'the packaged wkhost did not run the page' }
         Write-Host 'the packaged copy runs'
     }
+    'sites' {
+        # The phone's sites on the stand. This says nothing about how they look:
+        # it loads each one and keeps its screenshot and log, and fails when a
+        # page cannot be fetched at all. Comparing the pictures with the phone's
+        # is a separate, human step (docs/WindowsHost-status.md).
+        $exe = Get-ChildItem "$Work\build" -Recurse -Filter wkhost.exe | Select-Object -First 1
+        if (-not $exe) { throw 'wkhost.exe was not built' }
+        Copy-Item "$Work\cacert.pem" $exe.DirectoryName -Force
+        $env:PATH = "$Vcpkg\bin;$env:PATH"
+        $data = "$Work\site-data"
+        $shots = "$Work\sites"
+        Remove-Item $data, $shots -Recurse -Force -ErrorAction SilentlyContinue
+        New-Item -ItemType Directory -Force $data, $shots | Out-Null
+        # The runner's Arial stands in for the phone's fonts; layout differences
+        # caused by the fonts are expected and are not what this step judges.
+        New-Item -ItemType Directory -Force "$data\fonts" | Out-Null
+        Copy-Item "$env:SystemRoot\Fonts\arial.ttf", "$env:SystemRoot\Fonts\arialbd.ttf" "$data\fonts"
+
+        $sites = [ordered]@{
+            'duckduckgo-lite' = 'https://duckduckgo.com/lite/'
+            'google'          = 'https://www.google.com/'
+            'youtube'         = 'https://m.youtube.com/'
+            'html5test'       = 'https://html5test.com/'
+            'ozon'            = 'https://www.ozon.ru/'
+        }
+        $failed = @()
+        foreach ($name in $sites.Keys) {
+            $shot = Join-Path $shots "$name.bmp"
+            $log = Join-Path $shots "$name.log.txt"
+            $process = Start-Process $exe.FullName -ArgumentList @($sites[$name], '--data', $data,
+                '--shot', $shot, '--wait', '30') -PassThru
+            # Not -Wait: a message box would hold the step to its timeout.
+            if (-not $process.WaitForExit(180000)) {
+                $process.Kill()
+                Write-Host ("{0,-16} did not finish" -f $name)
+                $failed += "$name did not finish"
+                continue
+            }
+            if (Test-Path "$data\log.txt") { Copy-Item "$data\log.txt" $log -Force }
+            $text = if (Test-Path $log) { Get-Content $log -Raw } else { '' }
+            $status = if ($text -match 'load failed: (.+)') { "load failed: $($Matches[1])" }
+                      elseif ($process.ExitCode -ne 0) { "exit $($process.ExitCode)" }
+                      else { 'ok' }
+            Write-Host ("{0,-16} {1}" -f $name, $status)
+            if ($status -ne 'ok') { $failed += "$name - $status" }
+        }
+        Write-Host "screenshots and logs: $shots"
+        if ($failed.Count) { throw ("sites that did not load:`n  " + ($failed -join "`n  ")) }
+    }
     default { throw "unknown step $Step" }
 }

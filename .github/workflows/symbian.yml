@@ -347,3 +347,15 @@ jobs:
           name: wkhost
           path: WebKitBuild/SymbianHost/dist/wkhost.zip
           if-no-files-found: error
+      # The phone's sites on the stand: a screenshot and a log for each, so that
+      # a page that renders differently from the phone can be seen. Uploaded
+      # whatever the site step decides, since its pictures are the point.
+      - name: Sites
+        timeout-minutes: 20
+        run: Tools/Symbian/host/ci-windows.ps1 -Step sites
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sites
+          path: WebKitBuild/SymbianHost/sites/
+          if-no-files-found: ignore
