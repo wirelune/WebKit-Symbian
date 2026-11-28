@@ -364,7 +364,13 @@ void CurlHandle::enableSSLForHost(const String& host)
 
     setSslCtxCallbackFunction(willSetupSslCtxCallback, this);
 
-#if !OS(WINDOWS)
+    // The Symbian port trusts C:/resource/webkit/cacert.pem (the exe's
+    // directory on the test host) through CurlSSLHandleSymbian, on every
+    // platform it is built for. The Windows guard below is for a Windows port
+    // whose curl verifies against the system store; with mbedTLS there is no
+    // system store, so skipping this leaves curl with no CA at all and every
+    // HTTPS request fails the handshake.
+#if !OS(WINDOWS) || PLATFORM(SYMBIAN)
     if (auto* path = WTF::get_if<String>(sslHandle.getCACertInfo()))
         setCACertPath(path->utf8().data());
 #endif
@@ -496,7 +502,10 @@ void CurlHandle::enableHttp()
         curl_easy_setopt(m_handle, CURLOPT_PIPEWAIT, 1L);
         curl_easy_setopt(m_handle, CURLOPT_SSL_ENABLE_ALPN, 1L);
         curl_easy_setopt(m_handle, CURLOPT_SSL_ENABLE_NPN, 0L);
-#if OS(WINDOWS)
+#if OS(WINDOWS) && !PLATFORM(SYMBIAN)
+        // For a Windows port on Schannel, which reads the system store; curl
+        // built with mbedTLS has no such store, and the port uses the phone's
+        // CA file instead.
         curl_easy_setopt(m_handle, CURLOPT_SSL_OPTIONS, CURLSSLOPT_NATIVE_CA);
 #endif
     } else
